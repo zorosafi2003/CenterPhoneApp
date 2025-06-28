@@ -4,16 +4,84 @@
 	xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
 	xmlns:local="clr-namespace:CentersBarCode"
+	xmlns:converters="clr-namespace:CentersBarCode.Converters"
+	xmlns:vm="clr-namespace:CentersBarCode.ViewModels"
 	xmlns:views="clr-namespace:CentersBarCode.Views"
-	FlyoutIcon="dotnet_bot.png">
+	FlyoutIcon="dotnet_bot.png"
+	FlyoutBehavior="{Binding ShowFlyoutItems, Converter={x:Static converters:BoolToFlyoutBehaviorConverter.Instance}}"
+	x:DataType="vm:AppShellViewModel">
 
-    <FlyoutItem Title="Main" Icon="dotnet_bot.png" Route="MainPage">
+    <!-- Custom Flyout Header with records count and user info -->
+    <Shell.FlyoutHeaderTemplate>
+        <DataTemplate x:DataType="vm:AppShellViewModel">
+            <Grid BackgroundColor="#2196F3" HeightRequest="120" Padding="20,10" IsVisible="{Binding IsAuthenticated}">
+                <StackLayout VerticalOptions="Center">
+                    <Label 
+                        Text="Centers Barcode App" 
+                        FontSize="18" 
+                        FontAttributes="Bold"
+                        TextColor="White" />
+                    
+                    <!-- User Email -->
+                    <Label 
+                        Text="{Binding UserEmail}"
+                        FontSize="14"
+                        TextColor="LightGray"
+                        Margin="0,5,0,0" />
+                    
+                    <!-- Records Count Badge in header -->
+                    <StackLayout Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                        <Label 
+                            Text="Records:" 
+                            FontSize="14"
+                            TextColor="LightGray" />
+                        <Frame 
+                            BackgroundColor="Gold"
+                            CornerRadius="10"
+                            Padding="8,2"
+                            HasShadow="False"
+                            IsVisible="{Binding HasBadge}">
+                            <Label 
+                                Text="{Binding RecordsCount}"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                TextColor="Black" />
+                        </Frame>
+                    </StackLayout>
+                </StackLayout>
+            </Grid>
+        </DataTemplate>
+    </Shell.FlyoutHeaderTemplate>
+
+    <!-- Custom Flyout Footer with logout button -->
+    <Shell.FlyoutFooterTemplate>
+        <DataTemplate x:DataType="vm:AppShellViewModel">
+            <StackLayout Padding="10" IsVisible="{Binding IsAuthenticated}">
+                <Button Text="Logout" 
+                        Command="{Binding LogoutCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="Red"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Start" />
+            </StackLayout>
+        </DataTemplate>
+    </Shell.FlyoutFooterTemplate>
+
+    <!-- Login Page - Default route when not authenticated -->
+    <FlyoutItem Title="Login" Icon="dotnet_bot.png" Route="LoginPage" IsVisible="{Binding IsAuthenticated, Converter={x:Static converters:InverseBoolConverter.Instance}}">
+        <ShellContent Title="Login" ContentTemplate="{DataTemplate views:LoginPage}" />
+    </FlyoutItem>
+
+    <!-- Authenticated User Menu Items -->
+    <FlyoutItem Title="Main" Icon="dotnet_bot.png" Route="MainPage" IsVisible="{Binding IsAuthenticated}">
         <ShellContent Title="Main" ContentTemplate="{DataTemplate views:MainPage}" />
     </FlyoutItem>
-    <FlyoutItem Title="Records" Icon="dotnet_bot.png" Route="RecordsPage">
-        <ShellContent Title="Records" ContentTemplate="{DataTemplate views:RecordsPage}" />
+    
+    <FlyoutItem Title="Attach Card" Icon="dotnet_bot.png" Route="AttachCardPage" IsVisible="{Binding IsAuthenticated}">
+        <ShellContent Title="Attach Card" ContentTemplate="{DataTemplate views:AttachCardPage}" />
     </FlyoutItem>
-    <FlyoutItem Title="Login" Icon="dotnet_bot.png" Route="LoginPage">
-        <ShellContent Title="Login" ContentTemplate="{DataTemplate views:LoginPage}" />
+    
+    <FlyoutItem Title="Records" Icon="dotnet_bot.png" Route="RecordsPage" IsVisible="{Binding IsAuthenticated}">
+        <ShellContent Title="Records" ContentTemplate="{DataTemplate views:RecordsPage}" />
     </FlyoutItem>
 </Shell>

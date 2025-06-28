@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage 
+    x:Class="CentersBarCode.Views.AttachCardPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:CentersBarCode.ViewModels"
+    xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    Title="{Binding Title}"
+    x:DataType="vm:AttachCardViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!--  Main Content  -->
+        <VerticalStackLayout
+            Grid.Row="0"
+            Padding="20"
+            Spacing="20">
+            
+            <Label
+                FontAttributes="Bold"
+                FontSize="18"
+                Text="Phone Number"
+                HorizontalOptions="Start" />
+
+            <!--  Phone Number Input  -->
+            <Entry
+                x:Name="PhoneEntry"
+                Text="{Binding PhoneNumber}"
+                Placeholder="Enter 11-digit phone number"
+                Keyboard="Telephone"
+                MaxLength="11"
+                HorizontalOptions="FillAndExpand"
+                FontSize="16" />
+
+            <!--  Search Button  -->
+            <Button
+                Command="{Binding SearchCommand}"
+                HorizontalOptions="FillAndExpand"
+                IsEnabled="{Binding IsSearchEnabled}"
+                Text="Search"
+                BackgroundColor="#2196F3"
+                TextColor="White"
+                FontSize="16"
+                Margin="0,10,0,0" />
+
+            <!--  Instructions  -->
+            <Label
+                Text="Enter a valid 11-digit phone number to enable the search button. After clicking search, scan the QR code to attach the card."
+                FontSize="14"
+                TextColor="Gray"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                Margin="0,20,0,0" />
+
+        </VerticalStackLayout>
+
+        <!--  QR Scanner Overlay  -->
+        <Grid
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            BackgroundColor="Black"
+            IsVisible="{Binding IsQrScannerVisible}">
+
+            <zxing:CameraBarcodeReaderView
+                x:Name="cameraView"
+                BarcodesDetected="CameraView_BarCodeDetected"
+                CameraLocation="Rear"
+                HeightRequest="150"
+                HorizontalOptions="Fill"
+                IsDetecting="True"
+                VerticalOptions="Fill"
+                WidthRequest="300" />
+
+            <!--  Scan Frame for visual indication  -->
+            <Grid HorizontalOptions="Center" VerticalOptions="Center">
+                <Frame
+                    Padding="2"
+                    BackgroundColor="Transparent"
+                    BorderColor="White"
+                    CornerRadius="10"
+                    HasShadow="False"
+                    HeightRequest="150"
+                    WidthRequest="250" />
+
+                <Label
+                    Margin="0,-30,0,0"
+                    FontSize="14"
+                    HorizontalOptions="Center"
+                    Text="Position BarCode inside frame"
+                    TextColor="White"
+                    VerticalOptions="Start" />
+            </Grid>
+
+            <!--  Controls Grid  -->
+            <Grid Padding="20" RowDefinitions="Auto,*,Auto">
+                <!--  Top controls  -->
+                <HorizontalStackLayout
+                    Grid.Row="0"
+                    HorizontalOptions="End"
+                    Spacing="10">
+                    <Button
+                        BackgroundColor="Transparent"
+                        BorderColor="Transparent"
+                        Clicked="ToggleFlash_Clicked"
+                        FontSize="24"
+                        HeightRequest="40"
+                        Text="💡"
+                        WidthRequest="40" />
+                </HorizontalStackLayout>
+
+                <!--  Middle section - empty to allow camera view  -->
+
+                <!--  Bottom controls  -->
+                <VerticalStackLayout
+                    Grid.Row="2"
+                    HorizontalOptions="Center"
+                    Spacing="15">
+                    
+                    <Button
+                        Command="{Binding CloseQrScannerCommand}"
+                        HorizontalOptions="Center"
+                        Text="Close Scanner"
+                        BackgroundColor="Red"
+                        TextColor="White" />
+                </VerticalStackLayout>
+            </Grid>
+        </Grid>
+
+        <!--  Processing Indicator  -->
+        <Grid
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            BackgroundColor="#80000000"
+            IsVisible="{Binding IsProcessing}"
+            HorizontalOptions="FillAndExpand"
+            VerticalOptions="FillAndExpand">
+
+            <StackLayout
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Spacing="20">
+                
+                <ActivityIndicator 
+                    IsVisible="{Binding IsProcessing}"
+                    IsRunning="{Binding IsProcessing}"
+                    Color="White"
+                    Scale="1.5" />
+                
+                <Label 
+                    Text="Attaching card..."
+                    FontSize="16"
+                    TextColor="White"
+                    HorizontalOptions="Center" />
+            </StackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

@@ -1,24 +1,19 @@
 ﻿using CentersBarCode.ViewModels;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Devices;
-using Microsoft.Maui.Media;
-using System.Timers;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 
 namespace CentersBarCode.Views;
 
-public partial class MainPage : ContentPage
+public partial class AttachCardPage : ContentPage
 {
-    private readonly MainViewModel _viewModel;
+    private readonly AttachCardViewModel _viewModel;
     private bool _isFlashOn = false;
-    private System.Timers.Timer? _scanTimeoutTimer;
 
-    public MainPage(MainViewModel viewModel)
+    public AttachCardPage(AttachCardViewModel viewModel)
     {
         InitializeComponent();
-        BindingContext = viewModel;
         _viewModel = viewModel;
+        BindingContext = _viewModel;
 
         RequestCameraPermissions();
     }
@@ -27,7 +22,7 @@ public partial class MainPage : ContentPage
     {
         base.OnAppearing();
 
-        // Initialize scanner when OpenQrScannerCommand is executed
+        // Initialize scanner when QR scanner becomes visible
         _viewModel.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(_viewModel.IsQrScannerVisible) && _viewModel.IsQrScannerVisible)
@@ -96,10 +91,9 @@ public partial class MainPage : ContentPage
             // Configure barcode reader options
             cameraView.Options = new BarcodeReaderOptions
             {
-                //Formats = BarcodeFormat.Ean13 | BarcodeFormat.Ean8 | BarcodeFormat.Code128 | BarcodeFormat.Code39,
-                Formats=BarcodeFormats.OneDimensional,
+                Formats = BarcodeFormats.OneDimensional ,
                 AutoRotate = true,
-                TryHarder = false, // Enable for better detection
+                TryHarder = true,
                 Multiple = false,
             };
 
@@ -113,10 +107,7 @@ public partial class MainPage : ContentPage
             // Set initialized flag
             _viewModel.IsCameraInitialized = true;
 
-            // Start a timeout timer
-            StartScanTimeoutTimer();
-
-            System.Diagnostics.Debug.WriteLine("Camera initialized successfully");
+            System.Diagnostics.Debug.WriteLine("Camera initialized successfully for AttachCard");
         }
         catch (Exception ex)
         {
@@ -126,46 +117,6 @@ public partial class MainPage : ContentPage
             _viewModel.IsQrScannerVisible = false;
 
             System.Diagnostics.Debug.WriteLine($"Camera initialization error: {ex}");
-        }
-    }
-
-    private void StartScanTimeoutTimer()
-    {
-        // Clean up any existing timer
-        _scanTimeoutTimer?.Stop();
-        _scanTimeoutTimer?.Dispose();
-
-        // Create a new timer that will fire after 60 seconds
-        _scanTimeoutTimer = new System.Timers.Timer(60000);
-        _scanTimeoutTimer.Elapsed += ScanTimeout_Elapsed;
-        _scanTimeoutTimer.AutoReset = false;
-        _scanTimeoutTimer.Start();
-    }
-
-    private void ScanTimeout_Elapsed(object? sender, ElapsedEventArgs e)
-    {
-        if (_viewModel.IsQrScannerVisible && !_viewModel.IsPopupVisible)
-        {
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                bool continueScanning = await DisplayAlert("Scanning Timeout",
-                    "No QR code has been detected for some time. Do you want to continue scanning?",
-                    "Continue", "Cancel");
-
-                if (continueScanning)
-                {
-                    StartScanTimeoutTimer();
-                }
-                else
-                {
-                    _viewModel.IsQrScannerVisible = false;
-                    _viewModel.IsCameraInitialized = false;
-                    if (cameraView != null)
-                    {
-                        cameraView.IsDetecting = false;
-                    }
-                }
-            });
         }
     }
 
@@ -183,9 +134,6 @@ public partial class MainPage : ContentPage
             {
                 System.Diagnostics.Debug.WriteLine($"Barcode detected: {e.Results?.Length} results");
 
-                // Stop timeout timer
-                _scanTimeoutTimer?.Stop();
-
                 // Stop scanning
                 if (cameraView != null)
                 {
@@ -197,14 +145,12 @@ public partial class MainPage : ContentPage
                 {
                     var firstResult = e.Results[0];
                     var resultText = firstResult.Value.ToString();
-                    System.Diagnostics.Debug.WriteLine($"Detected QR code: {resultText}");
+                    System.Diagnostics.Debug.WriteLine($"Detected QR code for card attachment: {resultText}");
 
                     if (!string.IsNullOrEmpty(resultText))
                     {
-                        // Use the new ProcessScannedQrCode method to parse the QR code
-                        _viewModel.ProcessScannedQrCode(resultText);
-                        _viewModel.IsPopupVisible = true;
-                        _viewModel.IsQrScannerVisible = false;
+                        // Process the QR code for card attachment
+                        await _viewModel.ProcessScannedQrCodeAsync(resultText);
 
                         try
                         {
@@ -228,7 +174,6 @@ public partial class MainPage : ContentPage
                         {
                             cameraView.IsDetecting = true;
                         }
-                        StartScanTimeoutTimer();
                     }
                 }
                 else
@@ -238,7 +183,6 @@ public partial class MainPage : ContentPage
                     {
                         cameraView.IsDetecting = true;
                     }
-                    StartScanTimeoutTimer();
                 }
             }
             catch (Exception ex)
@@ -248,7 +192,6 @@ public partial class MainPage : ContentPage
                 {
                     cameraView.IsDetecting = true;
                 }
-                StartScanTimeoutTimer();
             }
         });
     }
@@ -289,42 +232,9 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private async void CaptureQrCode_Clicked(object sender, EventArgs e)
-    {
-        if (!_viewModel.IsQrScannerVisible || !_viewModel.IsCameraInitialized)
-        {
-            await DisplayAlert("Error", "Camera is not initialized.", "OK");
-            return;
-        }
-
-        try
-        {
-            _scanTimeoutTimer?.Stop();
-            if (cameraView != null)
-            {
-                cameraView.IsDetecting = true;
-            }
-            await DisplayAlert("Scanning", "Please position the QR code in the frame.", "OK");
-            StartScanTimeoutTimer();
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Error", $"Failed to process QR code: {ex.Message}", "OK");
-            if (cameraView != null)
-            {
-                cameraView.IsDetecting = true;
-            }
-            StartScanTimeoutTimer();
-        }
-    }
-
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-
-        _scanTimeoutTimer?.Stop();
-        _scanTimeoutTimer?.Dispose();
-        _scanTimeoutTimer = null;
 
         if (cameraView != null && _viewModel.IsCameraInitialized)
         {

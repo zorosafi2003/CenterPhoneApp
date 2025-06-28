@@ -2,6 +2,8 @@
 global using CommunityToolkit.Mvvm.Input;
 global using CentersBarCode.ViewModels;
 global using CentersBarCode.Views;
+global using CentersBarCode.Models;
+global using CentersBarCode.Services;
 global using System.Collections.ObjectModel;
 global using System.ComponentModel;
 global using System.Diagnostics;

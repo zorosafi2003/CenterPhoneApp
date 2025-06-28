@@ -80,6 +80,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <MauiXaml Update="Views\AttachCardPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\SplashScreen.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>	
@@ -89,10 +92,6 @@
 	  <PackageReference Include="Xamarin.GooglePlayServices.Auth">
 	    <Version>120.0.1</Version>
 	  </PackageReference>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Services\" />
 	</ItemGroup>
 
 	<PropertyGroup Label="MauiAppAccelerator">
