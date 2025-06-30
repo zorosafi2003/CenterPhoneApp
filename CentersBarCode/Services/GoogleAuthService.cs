@@ -16,7 +16,7 @@ namespace CentersBarCode.Services
     public class GoogleAuthService : IGoogleAuthService
     {
         // Client ID from your Google Developer Console - make sure this matches your OAuth configuration
-        private const string WebClientId = "61665556806-56m6slh77n3vbnbduic59i3h915a7cub.apps.googleusercontent.com";
+        private const string WebClientId = "613797922873-meolimpa6po0vcc8aql1r8asd6sq7n7n.apps.googleusercontent.com";
         
         #if ANDROID
         // Sign-in client

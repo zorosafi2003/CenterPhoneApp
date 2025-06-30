@@ -17,7 +17,7 @@
 		<ApplicationTitle>CentersBarCode</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.CentersBar</ApplicationId>
+		<ApplicationId>com.teachers-eg.CentersBarCode</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -103,6 +103,14 @@
 	<!-- Prevent code stripping that might affect Camera.MAUI -->
 	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
 		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
+	  <AndroidKeyStore>False</AndroidKeyStore>
+	  <AndroidSigningKeyAlias></AndroidSigningKeyAlias>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
+	  <AndroidKeyStore>False</AndroidKeyStore>
+	  <AndroidSigningKeyAlias></AndroidSigningKeyAlias>
 	</PropertyGroup>
 
 </Project>
