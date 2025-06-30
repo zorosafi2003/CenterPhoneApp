@@ -4,6 +4,7 @@ public interface IAuthenticationService
 {
     bool IsAuthenticated { get; }
     string? UserEmail { get; }
+    string? BearerToken { get; }
     Task<bool> LoginAsync(string email, string token);
     Task LogoutAsync();
     event EventHandler<bool> AuthenticationStateChanged;
@@ -13,9 +14,11 @@ public class AuthenticationService : IAuthenticationService
 {
     private bool _isAuthenticated;
     private string? _userEmail;
+    private string? _bearerToken;
 
     public bool IsAuthenticated => _isAuthenticated;
     public string? UserEmail => _userEmail;
+    public string? BearerToken => _bearerToken;
 
     public event EventHandler<bool>? AuthenticationStateChanged;
 
@@ -35,6 +38,7 @@ public class AuthenticationService : IAuthenticationService
             if (!string.IsNullOrEmpty(storedEmail) && !string.IsNullOrEmpty(storedToken))
             {
                 _userEmail = storedEmail;
+                _bearerToken = storedToken;
                 _isAuthenticated = true;
                 AuthenticationStateChanged?.Invoke(this, true);
                 System.Diagnostics.Debug.WriteLine($"User already authenticated: {storedEmail}");
@@ -58,6 +62,7 @@ public class AuthenticationService : IAuthenticationService
             await SecureStorage.Default.SetAsync("token", token);
 
             _userEmail = email;
+            _bearerToken = token;
             _isAuthenticated = true;
 
             // Notify authentication state changed
@@ -82,6 +87,7 @@ public class AuthenticationService : IAuthenticationService
             SecureStorage.Default.Remove("token");
 
             _userEmail = null;
+            _bearerToken = null;
             _isAuthenticated = false;
 
             // Notify authentication state changed

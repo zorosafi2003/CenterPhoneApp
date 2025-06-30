@@ -24,8 +24,8 @@ public static class MauiProgram
             logging.AddDebug();
         });
 
-		 // Register services
-		builder.Services.AddSingleton<MainViewModel>();
+		 // Register ViewModels
+		builder.Services.AddTransient<MainViewModel>();
 		builder.Services.AddTransient<RecordsViewModel>();
 		builder.Services.AddTransient<AttachCardViewModel>();
 		builder.Services.AddSingleton<AppShellViewModel>();
@@ -40,6 +40,11 @@ public static class MauiProgram
 		
 		// Register Database Service
 		builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+		
+		// Register HTTP Client and API Services
+		builder.Services.AddHttpClient<IApiService, ApiService>();
+		builder.Services.AddSingleton<IStudentService, StudentService>();
+		builder.Services.AddSingleton<ICenterService, CenterService>();
 		
 		// Register pages
 		builder.Services.AddTransient<Views.MainPage>();

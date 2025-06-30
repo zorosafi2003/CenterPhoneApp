@@ -1,0 +1,5 @@
+{
+  "BaseUrl": "https://your-api-domain.com",
+  "StudentsEndpoint": "/api/students",
+  "CentersEndpoint": "/api/centers"
+}

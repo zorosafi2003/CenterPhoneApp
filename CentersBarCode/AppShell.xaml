@@ -9,79 +9,271 @@
 	xmlns:views="clr-namespace:CentersBarCode.Views"
 	FlyoutIcon="menu_icon.png"
 	FlyoutBehavior="{Binding ShowFlyoutItems, Converter={x:Static converters:BoolToFlyoutBehaviorConverter.Instance}}"
+	FlyoutBackgroundColor="Transparent"
 	x:DataType="vm:AppShellViewModel">
 
-    <!-- Custom Flyout Header with records count and user info -->
-    <Shell.FlyoutHeaderTemplate>
-        <DataTemplate x:DataType="vm:AppShellViewModel">
-            <Grid BackgroundColor="#2196F3" HeightRequest="120" Padding="20,10" IsVisible="{Binding IsAuthenticated}">
-                <StackLayout VerticalOptions="Center">
-                    <Label 
-                        Text="Centers Barcode App" 
-                        FontSize="18" 
-                        FontAttributes="Bold"
-                        TextColor="White" />
-                    
-                    <!-- User Email -->
-                    <Label 
-                        Text="{Binding UserEmail}"
-                        FontSize="14"
-                        TextColor="LightGray"
-                        Margin="0,5,0,0" />
-                    
-                    <!-- Records Count Badge in header -->
-                    <StackLayout Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
-                        <Label 
-                            Text="Records:" 
-                            FontSize="14"
-                            TextColor="LightGray" />
-                        <Frame 
-                            BackgroundColor="Gold"
-                            CornerRadius="10"
-                            Padding="8,2"
-                            HasShadow="False"
-                            IsVisible="{Binding HasBadge}">
-                            <Label 
-                                Text="{Binding RecordsCount}"
-                                FontSize="12"
+    <!-- Custom Flyout Content with modern translucent design -->
+    <Shell.FlyoutContent>
+        <Grid>
+            <!-- Background with blur effect -->
+            <Frame BackgroundColor="#F8F9FA" 
+                   HasShadow="False" 
+                   CornerRadius="0"
+                   Padding="0">
+                <Frame.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#F8F9FA" Offset="0.0" />
+                        <GradientStop Color="#E9ECEF" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Frame.Background>
+            </Frame>
+
+            <!-- Main Content -->
+            <ScrollView>
+                <StackLayout Spacing="0">
+                    <!-- Header Section -->
+                    <Grid BackgroundColor="Transparent" 
+                          HeightRequest="180" 
+                          Padding="20,40,20,20" 
+                          IsVisible="{Binding IsAuthenticated}">
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#667EEA" Offset="0.0" />
+                                <GradientStop Color="#764BA2" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                        
+                        <StackLayout VerticalOptions="Center">
+                            <!-- App Title with modern typography -->
+                            <Label Text="Centers Barcode" 
+                                   FontSize="22" 
+                                   FontAttributes="Bold"
+                                   TextColor="White"
+                                   Margin="0,0,0,8" />
+                            
+                            <!-- User Email with subtle styling -->
+                            <Label Text="{Binding UserEmail}"
+                                   FontSize="14"
+                                   TextColor="#E8E8E8"
+                                   Margin="0,0,0,12" />
+                            
+                            <!-- Records, Students, and Centers Badges -->
+                            <StackLayout Spacing="4" Margin="0,0,0,0">
+                                <!-- First Row -->
+                                <StackLayout Orientation="Horizontal" Spacing="8">
+                                    <!-- Records Badge -->
+                                    <Frame BackgroundColor="#FFD700"
+                                           CornerRadius="12"
+                                           Padding="8,4"
+                                           HasShadow="False"
+                                           IsVisible="{Binding HasBadge}">
+                                        <StackLayout Orientation="Horizontal" Spacing="4">
+                                            <Label Text="📋" 
+                                                   FontSize="10"
+                                                   VerticalOptions="Center" />
+                                            <Label Text="{Binding RecordsCount, StringFormat='{0} Records'}"
+                                                   FontSize="10"
+                                                   FontAttributes="Bold"
+                                                   TextColor="#1A1A1A"
+                                                   VerticalOptions="Center" />
+                                        </StackLayout>
+                                    </Frame>
+                                    
+                                    <!-- Students Badge -->
+                                    <Frame BackgroundColor="#28A745"
+                                           CornerRadius="12"
+                                           Padding="8,4"
+                                           HasShadow="False"
+                                           IsVisible="{Binding HasStudentsBadge}">
+                                        <StackLayout Orientation="Horizontal" Spacing="4">
+                                            <Label Text="👥" 
+                                                   FontSize="10"
+                                                   TextColor="White"
+                                                   VerticalOptions="Center" />
+                                            <Label Text="{Binding StudentsCount, StringFormat='{0} Students'}"
+                                                   FontSize="10"
+                                                   FontAttributes="Bold"
+                                                   TextColor="White"
+                                                   VerticalOptions="Center" />
+                                        </StackLayout>
+                                    </Frame>
+                                </StackLayout>
+                                
+                                <!-- Second Row -->
+                                <StackLayout Orientation="Horizontal" Spacing="8">
+                                    <!-- Centers Badge -->
+                                    <Frame BackgroundColor="#6F42C1"
+                                           CornerRadius="12"
+                                           Padding="8,4"
+                                           HasShadow="False"
+                                           IsVisible="{Binding HasCentersBadge}">
+                                        <StackLayout Orientation="Horizontal" Spacing="4">
+                                            <Label Text="🏢" 
+                                                   FontSize="10"
+                                                   TextColor="White"
+                                                   VerticalOptions="Center" />
+                                            <Label Text="{Binding CentersCount, StringFormat='{0} Centers'}"
+                                                   FontSize="10"
+                                                   FontAttributes="Bold"
+                                                   TextColor="White"
+                                                   VerticalOptions="Center" />
+                                        </StackLayout>
+                                    </Frame>
+                                </StackLayout>
+                            </StackLayout>
+                        </StackLayout>
+                    </Grid>
+
+                    <!-- Navigation Items -->
+                    <StackLayout Spacing="8" Padding="16,20,16,20">
+                        
+                        <!-- Login Item (when not authenticated) -->
+                        <Button Text="🔐 Login"
+                                BackgroundColor="#F8F9FA"
+                                TextColor="#495057"
+                                FontSize="16"
                                 FontAttributes="Bold"
-                                TextColor="Black" />
-                        </Frame>
+                                HeightRequest="50"
+                                CornerRadius="12"
+                                BorderWidth="1"
+                                BorderColor="#DEE2E6"
+                                IsVisible="{Binding IsAuthenticated, Converter={x:Static converters:InverseBoolConverter.Instance}}"
+                                Clicked="OnLoginClicked" />
+
+                        <!-- Main Menu Items (when authenticated) -->
+                        <StackLayout IsVisible="{Binding IsAuthenticated}" Spacing="8">
+                            
+                            <!-- Main Page -->
+                            <Button Text="🏠 Main"
+                                    BackgroundColor="White"
+                                    TextColor="#343A40"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    HeightRequest="50"
+                                    CornerRadius="12"
+                                    BorderWidth="1"
+                                    BorderColor="#E9ECEF"
+                                    Command="{Binding NavigateToMainCommand}"
+                                    Clicked="OnMainClicked" />
+
+                            <!-- Attach Card Page -->
+                            <Button Text="📱 Attach Card"
+                                    BackgroundColor="White"
+                                    TextColor="#343A40"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    HeightRequest="50"
+                                    CornerRadius="12"
+                                    BorderWidth="1"
+                                    BorderColor="#E9ECEF"
+                                    Command="{Binding NavigateToAttachCardCommand}"
+                                    Clicked="OnAttachCardClicked" />
+
+                            <!-- Records Page -->
+                            <Button Text="📄 Records"
+                                    BackgroundColor="White"
+                                    TextColor="#343A40"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    HeightRequest="50"
+                                    CornerRadius="12"
+                                    BorderWidth="1"
+                                    BorderColor="#E9ECEF"
+                                    Command="{Binding NavigateToRecordsCommand}"
+                                    Clicked="OnRecordsClicked" />
+
+                            <!-- Import Centers Button -->
+                            <Button Text="🏢 Import Centers"
+                                    BackgroundColor="#6F42C1"
+                                    TextColor="White"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    HeightRequest="50"
+                                    CornerRadius="12"
+                                    BorderWidth="1"
+                                    BorderColor="#5A2D91"
+                                    Command="{Binding ImportCentersCommand}"
+                                    IsEnabled="{Binding IsImportingCenters, Converter={x:Static converters:InverseBoolConverter.Instance}}" />
+
+                            <!-- Import Students Button -->
+                            <Button Text="👥 Import Students"
+                                    BackgroundColor="#28A745"
+                                    TextColor="White"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    HeightRequest="50"
+                                    CornerRadius="12"
+                                    BorderWidth="1"
+                                    BorderColor="#1E7E34"
+                                    Command="{Binding ImportStudentsCommand}"
+                                    IsEnabled="{Binding IsImportingStudents, Converter={x:Static converters:InverseBoolConverter.Instance}}" />
+
+                            <!-- Import Status Indicators -->
+                            <StackLayout Spacing="4">
+                                <!-- Centers Import Status -->
+                                <StackLayout Orientation="Horizontal" 
+                                             Spacing="8" 
+                                             Padding="12,4"
+                                             IsVisible="{Binding IsImportingCenters}">
+                                    <ActivityIndicator IsRunning="{Binding IsImportingCenters}" 
+                                                       Color="#6F42C1" 
+                                                       WidthRequest="20" 
+                                                       HeightRequest="20" />
+                                    <Label Text="Importing centers..." 
+                                           FontSize="14" 
+                                           TextColor="#6C757D"
+                                           VerticalOptions="Center" />
+                                </StackLayout>
+                                
+                                <!-- Students Import Status -->
+                                <StackLayout Orientation="Horizontal" 
+                                             Spacing="8" 
+                                             Padding="12,4"
+                                             IsVisible="{Binding IsImportingStudents}">
+                                    <ActivityIndicator IsRunning="{Binding IsImportingStudents}" 
+                                                       Color="#28A745" 
+                                                       WidthRequest="20" 
+                                                       HeightRequest="20" />
+                                    <Label Text="Importing students..." 
+                                           FontSize="14" 
+                                           TextColor="#6C757D"
+                                           VerticalOptions="Center" />
+                                </StackLayout>
+                            </StackLayout>
+                            
+                            <!-- Logout Button -->
+                            <Button Text="🚪 Logout"
+                                    Command="{Binding LogoutCommand}"
+                                    BackgroundColor="#FFF5F5"
+                                    TextColor="#DC3545"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    HeightRequest="50"
+                                    CornerRadius="12"
+                                    BorderWidth="1"
+                                    BorderColor="#F5C6CB"
+                                    Margin="0,20,0,0" />
+                        </StackLayout>
                     </StackLayout>
                 </StackLayout>
-            </Grid>
-        </DataTemplate>
-    </Shell.FlyoutHeaderTemplate>
+            </ScrollView>
+        </Grid>
+    </Shell.FlyoutContent>
 
-    <!-- Custom Flyout Footer with logout button -->
-    <Shell.FlyoutFooterTemplate>
-        <DataTemplate x:DataType="vm:AppShellViewModel">
-            <StackLayout Padding="10" IsVisible="{Binding IsAuthenticated}">
-                <Button Text="Logout" 
-                        Command="{Binding LogoutCommand}"
-                        BackgroundColor="Transparent"
-                        TextColor="Red"
-                        FontAttributes="Bold"
-                        HorizontalOptions="Start" />
-            </StackLayout>
-        </DataTemplate>
-    </Shell.FlyoutFooterTemplate>
-
-    <!-- Login Page - Default route when not authenticated -->
-    <FlyoutItem Title="Login" Icon="menu_icon.png" Route="LoginPage" IsVisible="{Binding IsAuthenticated, Converter={x:Static converters:InverseBoolConverter.Instance}}">
+    <!-- Shell Items for routing - All pages visible but hidden from flyout via custom content -->
+    <FlyoutItem Title="Login" Route="LoginPage" IsVisible="{Binding IsAuthenticated, Converter={x:Static converters:InverseBoolConverter.Instance}}">
         <ShellContent Title="Login" ContentTemplate="{DataTemplate views:LoginPage}" />
     </FlyoutItem>
 
-    <!-- Authenticated User Menu Items -->
-    <FlyoutItem Title="Main" Icon="dotnet_bot.png" Route="MainPage" IsVisible="{Binding IsAuthenticated}">
+    <FlyoutItem Title="Main" Route="MainPage" IsVisible="{Binding IsAuthenticated}">
         <ShellContent Title="Main" ContentTemplate="{DataTemplate views:MainPage}" />
     </FlyoutItem>
     
-    <FlyoutItem Title="Attach Card" Icon="dotnet_bot.png" Route="AttachCardPage" IsVisible="{Binding IsAuthenticated}">
+    <FlyoutItem Title="Attach Card" Route="AttachCardPage" IsVisible="{Binding IsAuthenticated}">
         <ShellContent Title="Attach Card" ContentTemplate="{DataTemplate views:AttachCardPage}" />
     </FlyoutItem>
     
-    <FlyoutItem Title="Records" Icon="dotnet_bot.png" Route="RecordsPage" IsVisible="{Binding IsAuthenticated}">
+    <FlyoutItem Title="Records" Route="RecordsPage" IsVisible="{Binding IsAuthenticated}">
         <ShellContent Title="Records" ContentTemplate="{DataTemplate views:RecordsPage}" />
     </FlyoutItem>
 </Shell>

@@ -2,18 +2,25 @@ using SQLite;
 
 namespace CentersBarCode.Models;
 
+[Table("Centers")]
 public class Center
 {
-    public Guid Id { get; set; }
+    [PrimaryKey]
+    public string Id { get; set; } = string.Empty;
+    
     public string Name { get; set; } = string.Empty;
+    
+    public DateTime CreatedOn { get; set; }
 
     public Center()
     {
-        Id = Guid.NewGuid();
+        Id = string.Empty;
+        CreatedOn = DateTime.UtcNow;
     }
 
-    public Center(string name) : this()
+    public Center(string id, string name) : this()
     {
+        Id = id;
         Name = name;
     }
 
@@ -21,4 +28,11 @@ public class Center
     {
         return Name;
     }
+}
+
+// DTO for Centers API response
+public class CenterApiResponse
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 }

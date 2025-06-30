@@ -5,6 +5,7 @@ namespace CentersBarCode.ViewModels;
 public partial class MainViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
+    private readonly ICenterService _centerService;
 
     [ObservableProperty]
     private ObservableCollection<Center> _centers;
@@ -36,19 +37,13 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isSaving;
 
-    public MainViewModel(IDatabaseService databaseService)
+    public MainViewModel(IDatabaseService databaseService, ICenterService centerService)
     {
         _databaseService = databaseService;
+        _centerService = centerService;
         
-        // Initialize centers list with sample data
-        Centers = new ObservableCollection<Center>
-        {
-            new Center("Center 1"),
-            new Center("Center 2"), 
-            new Center("Center 3"),
-            new Center("Center 4"),
-            new Center("Center 5")
-        };
+        // Initialize empty centers list - will be populated from database
+        Centers = new ObservableCollection<Center>();
 
         // Initialize other properties
         IsQrScannerVisible = false;
@@ -60,20 +55,62 @@ public partial class MainViewModel : BaseViewModel
         IsCameraInitialized = false;
         IsSaving = false;
 
-        // Initialize database
-        InitializeDatabaseAsync();
+        // Initialize database and load centers
+        InitializeAsync();
     }
 
-    private async void InitializeDatabaseAsync()
+    private async void InitializeAsync()
     {
         try
         {
             await _databaseService.InitializeAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
+            
+            // Load centers from database
+            await LoadCentersAsync();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error initializing database: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error initializing: {ex.Message}");
+        }
+    }
+
+    private async Task LoadCentersAsync()
+    {
+        try
+        {
+            var centersFromDb = await _centerService.GetAllCentersAsync();
+            
+            Centers.Clear();
+            foreach (var center in centersFromDb)
+            {
+                Centers.Add(center);
+            }
+            
+            // If no centers in database, add some default ones
+            if (Centers.Count == 0)
+            {
+                var defaultCenters = new[]
+                {
+                    new Center("1", "Center 1"),
+                    new Center("2", "Center 2"), 
+                    new Center("3", "Center 3"),
+                    new Center("4", "Center 4"),
+                    new Center("5", "Center 5")
+                };
+                
+                foreach (var center in defaultCenters)
+                {
+                    await _databaseService.SaveCenterAsync(center);
+                    Centers.Add(center);
+                }
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"Loaded {Centers.Count} centers");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading centers: {ex.Message}");
         }
     }
 
@@ -108,12 +145,19 @@ public partial class MainViewModel : BaseViewModel
         {
             IsSaving = true;
             
-            // Create QR code record with the three required parameters
+            // Create QR code record - need to convert center ID string to Guid
+            Guid centerGuid;
+            if (!Guid.TryParse(SelectedCenter.Id, out centerGuid))
+            {
+                // If the center ID is not a valid GUID, create a new one based on the string
+                centerGuid = Guid.NewGuid();
+                System.Diagnostics.Debug.WriteLine($"Created new GUID {centerGuid} for center ID {SelectedCenter.Id}");
+            }
+            
             var qrRecord = new QrCodeRecord(
-                centerId: SelectedCenter.Id,
+                centerId: centerGuid,
                 code: ScannedCode
             );
-            // CreatedDateUtc is automatically set in the constructor
 
             // Save to database
             await _databaseService.SaveQrCodeRecordAsync(qrRecord);
@@ -220,5 +264,12 @@ public partial class MainViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine($"Error refreshing records badge: {ex.Message}");
         }
+    }
+
+    // Command to refresh centers from database
+    [RelayCommand]
+    private async Task RefreshCentersAsync()
+    {
+        await LoadCentersAsync();
     }
 }
