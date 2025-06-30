@@ -17,7 +17,7 @@
 		<ApplicationTitle>CentersBarCode</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.teachers-eg.CentersBarCode</ApplicationId>
+		<ApplicationId>com.teacherseg.CentersBarCode</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

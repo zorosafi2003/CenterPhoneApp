@@ -62,12 +62,12 @@ public class MainActivity : MauiAppCompatActivity
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         System.Diagnostics.Debug.WriteLine($"OnActivityResult: requestCode={requestCode}, resultCode={resultCode}, data={data != null}");
-        
+
         try
         {
             // Try to process Google Sign-In result first
             bool handled = GoogleAuthHelper.ProcessActivityResult(requestCode, resultCode, data);
-            
+
             if (handled)
             {
                 System.Diagnostics.Debug.WriteLine("Activity result was handled by GoogleAuthHelper");
@@ -83,10 +83,11 @@ public class MainActivity : MauiAppCompatActivity
         {
             System.Diagnostics.Debug.WriteLine($"Error processing activity result: {ex}");
         }
-        
+
         // Always call base method
         base.OnActivityResult(requestCode, resultCode, data);
     }
+
 
     public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
     {

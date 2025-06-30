@@ -12,10 +12,10 @@ namespace CentersBarCode.Platforms.Android
     {
         // Request code used for the sign-in intent
         public const int RC_SIGN_IN = 9001;
-        
+
         // Static reference to the GoogleAuthService
         private static GoogleAuthService? _authService;
-        
+
         /// <summary>
         /// Initializes the GoogleAuthHelper with the GoogleAuthService instance
         /// </summary>
@@ -25,7 +25,7 @@ namespace CentersBarCode.Platforms.Android
             _authService = authService;
             Debug.WriteLine("GoogleAuthHelper initialized with GoogleAuthService");
         }
-        
+
         /// <summary>
         /// Check if the device is connected to the internet
         /// </summary>
@@ -35,15 +35,15 @@ namespace CentersBarCode.Platforms.Android
             {
                 if (Platform.CurrentActivity == null)
                     return false;
-                
+
                 ConnectivityManager? connectivityManager = Platform.CurrentActivity.GetSystemService(global::Android.Content.Context.ConnectivityService) as ConnectivityManager;
                 if (connectivityManager == null)
                     return false;
-                
+
                 // For Android 6.0+
                 NetworkInfo? activeNetwork = connectivityManager.ActiveNetworkInfo;
                 bool isConnected = activeNetwork != null && activeNetwork.IsConnected;
-                
+
                 Debug.WriteLine($"Internet connection check in GoogleAuthHelper: {isConnected}");
                 return isConnected;
             }
@@ -53,7 +53,7 @@ namespace CentersBarCode.Platforms.Android
                 return true; // Assume connected if we can't check
             }
         }
-        
+
         /// <summary>
         /// Processes the activity result from the sign-in intent
         /// </summary>
@@ -64,19 +64,19 @@ namespace CentersBarCode.Platforms.Android
         public static bool ProcessActivityResult(int requestCode, global::Android.App.Result resultCode, global::Android.Content.Intent? data)
         {
             Debug.WriteLine($"ProcessActivityResult: requestCode={requestCode}, resultCode={resultCode}");
-            
+
             // Only handle the Google Sign-In request code
             if (requestCode == RC_SIGN_IN)
             {
                 Debug.WriteLine("Handling Google Sign-In activity result");
-                
+
                 // Check if the auth service is available
                 if (_authService == null)
                 {
                     Debug.WriteLine("ERROR: GoogleAuthService is null, cannot process sign-in result");
                     return true; // We still handled it, even though we couldn't process it properly
                 }
-                
+
                 // Verify internet connection
                 if (!IsConnectedToInternet())
                 {
@@ -84,7 +84,7 @@ namespace CentersBarCode.Platforms.Android
                     _authService.OnGoogleSignInError("Network error. Please check your internet connection and try again.");
                     return true;
                 }
-                
+
                 // Handle the Google Sign-In response even if cancelled
                 try
                 {
@@ -92,12 +92,12 @@ namespace CentersBarCode.Platforms.Android
                     if (data != null)
                     {
                         Debug.WriteLine("Getting sign-in account from intent");
-                        
+
                         try
                         {
                             // Try to get the sign-in result directly to check for API exceptions
                             var task = GoogleSignIn.GetSignedInAccountFromIntentAsync(data);
-                            
+
                             // Process task on main thread
                             MainThread.BeginInvokeOnMainThread(async () =>
                             {
@@ -110,21 +110,21 @@ namespace CentersBarCode.Platforms.Android
                                         _authService.OnGoogleSignInError("Network connection lost during sign-in. Please check your connection and try again.");
                                         return;
                                     }
-                                    
+
                                     // Wait for the task to complete with a timeout
                                     var timeoutTask = Task.Delay(15000); // 15 second timeout for account retrieval
                                     var completedTask = await Task.WhenAny(task, timeoutTask);
-                                    
+
                                     if (completedTask == timeoutTask)
                                     {
                                         Debug.WriteLine("Account retrieval timed out");
                                         _authService.OnGoogleSignInError("Account retrieval timed out. Please try again.");
                                         return;
                                     }
-                                    
+
                                     // Get the account
                                     var account = await task;
-                                    
+
                                     if (account != null && !string.IsNullOrEmpty(account.Email))
                                     {
                                         // If we got a valid account, consider it a success
@@ -156,7 +156,7 @@ namespace CentersBarCode.Platforms.Android
                                     {
                                         // Handle other API exceptions
                                         Debug.WriteLine($"Google API error: {apiEx.StatusCode} - {apiEx.Message}");
-                                        
+
                                         // Provide a more user-friendly message for common API errors
                                         string errorMessage = apiEx.StatusCode switch
                                         {
@@ -165,7 +165,7 @@ namespace CentersBarCode.Platforms.Android
                                             12501 => "User cancelled the sign-in.",
                                             _ => $"Google sign-in error: {apiEx.Message}"
                                         };
-                                        
+
                                         _authService.OnGoogleSignInError(errorMessage);
                                     }
                                 }
@@ -211,11 +211,11 @@ namespace CentersBarCode.Platforms.Android
                     Debug.WriteLine($"Exception during sign-in processing: {ex}");
                     _authService.OnGoogleSignInError($"Error during sign-in: {ex.Message}");
                 }
-                
+
                 // We handled the sign-in result
                 return true;
             }
-            
+
             // We didn't handle this activity result
             Debug.WriteLine($"Request code {requestCode} doesn't match Google Sign-In code {RC_SIGN_IN}");
             return false;
