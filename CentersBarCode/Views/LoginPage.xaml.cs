@@ -50,59 +50,8 @@ public partial class LoginPage : ContentPage
     {
         GoogleLoginButton.IsEnabled = true;
         GoogleLoginButton.Text = "Sign in with Google";
-        TestLoginButton.IsEnabled = true;
-        TestLoginButton.Text = "Test Login (Demo)";
         IsBusy = false;
         _isAuthenticating = false;
-    }
-
-    private async void OnTestLoginClicked(object sender, EventArgs e)
-    {
-        if (_isAuthenticating) 
-        {
-            Debug.WriteLine("Authentication already in progress, ignoring test login click");
-            return;
-        }
-        
-        try
-        {
-            _isAuthenticating = true;
-            
-            // Disable both buttons
-            GoogleLoginButton.IsEnabled = false;
-            TestLoginButton.IsEnabled = false;
-            TestLoginButton.Text = "Logging in...";
-            IsBusy = true;
-            
-            Debug.WriteLine("Starting test authentication");
-            
-            // Simulate a test login
-            var loginSuccess = await _authenticationService.LoginAsync("test@example.com", "test_token");
-            
-            if (loginSuccess)
-            {
-                Debug.WriteLine("Test login successful, navigating to MainPage");
-                await Shell.Current.GoToAsync("//MainPage");
-            }
-            else
-            {
-                await DisplayAlert("Login Failed", "Test login failed.", "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Exception during test login: {ex}");
-            await DisplayAlert("Error", $"Test login failed: {ex.Message}", "OK");
-        }
-        finally
-        {
-            // Re-enable buttons only if still on this page
-            if (!_authenticationService.IsAuthenticated)
-            {
-                ResetButtonStates();
-            }
-            Debug.WriteLine("Test login process completed");
-        }
     }
 
     private async void OnGoogleLoginClicked(object sender, EventArgs e)
@@ -129,7 +78,6 @@ public partial class LoginPage : ContentPage
             
             // Disable the button to prevent multiple clicks
             GoogleLoginButton.IsEnabled = false;
-            TestLoginButton.IsEnabled = false;
             GoogleLoginButton.Text = "Signing in...";
             IsBusy = true;
             
@@ -145,7 +93,7 @@ public partial class LoginPage : ContentPage
                 // Login to our authentication service
                 var loginSuccess = await _authenticationService.LoginAsync(
                     authResult.UserEmail, 
-                    authResult.IdToken ?? "demo_token"
+                    authResult.IdToken 
                 );
                 
                 if (loginSuccess)

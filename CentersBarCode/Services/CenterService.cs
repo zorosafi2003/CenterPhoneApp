@@ -9,7 +9,6 @@ public interface ICenterService
     Task<List<Center>> GetAllCentersAsync();
     Task<int> GetCentersCountAsync();
     Task ClearAllCentersAsync();
-    Task<Center?> GetCenterByIdAsync(string centerId);
 }
 
 public class CenterService : ICenterService
@@ -122,16 +121,4 @@ public class CenterService : ICenterService
         }
     }
 
-    public async Task<Center?> GetCenterByIdAsync(string centerId)
-    {
-        try
-        {
-            return await _databaseService.GetCenterByIdAsync(centerId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting center by ID: {CenterId}", centerId);
-            return null;
-        }
-    }
 }

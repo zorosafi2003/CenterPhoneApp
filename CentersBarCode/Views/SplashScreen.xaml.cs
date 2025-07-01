@@ -83,7 +83,6 @@ public partial class SplashScreen : ContentPage
 
             // Create services manually for fallback
             var databaseService = new Services.DatabaseService();
-            var authService = new Services.AuthenticationService();
             
             // Create loggers
             var apiLogger = NullLogger<ApiService>.Instance;
@@ -92,6 +91,7 @@ public partial class SplashScreen : ContentPage
             
             var httpClient = new HttpClient();
             var apiService = new Services.ApiService(httpClient, apiLogger);
+            var authService = new Services.AuthenticationService(apiService);
             var studentService = new Services.StudentService(databaseService, apiService, studentLogger);
             var centerService = new Services.CenterService(databaseService, apiService, centerLogger);
             

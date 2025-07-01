@@ -1,5 +1,6 @@
 {
-  "BaseUrl": "https://your-api-domain.com",
-  "StudentsEndpoint": "/api/students",
-  "CentersEndpoint": "/api/centers"
+  "BaseUrl": "https://e9c0-41-237-212-199.ngrok-free.app",
+  "StudentsEndpoint": "/centers-api/students/list",
+  "CentersEndpoint": "/centers-api/centers/list",
+  "AuthenticationEndpoint": "/auth/login"
 }
