@@ -46,33 +46,43 @@ public class StudentApiResponse
 public class ApiConfiguration
 {
     public string BaseUrl { get; set; } = string.Empty;
-    public string StudentsEndpoint { get; set; } = string.Empty;
-    public string CentersEndpoint { get; set; } = string.Empty;
+    public string GetStudentsEndpoint { get; set; } = string.Empty;
+    public string GetStudentByPhoneEndpoint { get; set; } = string.Empty;
+    public string GetStudentByCodeEndpoint { get; set; } = string.Empty;
+    public string SetStudentAttendanceEndpoint { get; set; } = string.Empty;
+    public string AttachStudentToCodeEndpoint { get; set; } = string.Empty;
+    public string GetCentersEndpoint { get; set; } = string.Empty;
     public string AuthenticationEndpoint { get; set; } = string.Empty;
 }
 
 public class DataAndCountDto<T>
 {
-    public List<T> Data { get; set; }
+    public List<T> Data { get; set; } = new();
     public int Count { get; set; }
+}
+
+public class Result
+{
+    public bool IsSuccess { get; set; }
+    public Error Error { get; set; } = new();
 }
 
 public class Result<T>
 {
     public bool IsSuccess { get; set; }
-    public Error Error { get; set; }
-    public T Value { get; set; }
+    public Error Error { get; set; } = new();
+    public T Value { get; set; } = default!;
 }
 
 public class Error
 {
-    public string Code { get; set; }
-    public string Description { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }
 
 public class ValidateAuthenticationResponse
 {
-    public string FullName { get; set; }
-    public string Token { get; set; }
-    public string TeacherName { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Token { get; set; } = string.Empty;
+    public string TeacherName { get; set; } = string.Empty;
 }

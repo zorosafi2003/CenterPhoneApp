@@ -1,6 +1,10 @@
 {
   "BaseUrl": "https://e9c0-41-237-212-199.ngrok-free.app",
-  "StudentsEndpoint": "/centers-api/students/list",
-  "CentersEndpoint": "/centers-api/centers/list",
+  "GetStudentsEndpoint": "/centers-api/students/list",
+  "GetStudentByPhoneEndpoint": "/centers-api/students/by-phone",
+  "GetStudentByCodeEndpoint": "/centers-api/students/by-code",
+  "SetStudentAttendanceEndpoint": "/centers-api/attendance/set",
+  "AttachStudentToCodeEndpoint": "/centers-api/students/attach-code",
+  "GetCentersEndpoint": "/centers-api/centers/list",
   "AuthenticationEndpoint": "/auth/login"
 }

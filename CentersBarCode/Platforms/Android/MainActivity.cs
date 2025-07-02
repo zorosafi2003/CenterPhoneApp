@@ -59,7 +59,7 @@ public class MainActivity : MauiAppCompatActivity
     }
 
     // Handle the redirect from the authentication flow
-    protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
+    protected override void OnActivityResult(int requestCode, Android.App.Result resultCode, Intent? data)
     {
         System.Diagnostics.Debug.WriteLine($"OnActivityResult: requestCode={requestCode}, resultCode={resultCode}, data={data != null}");
 

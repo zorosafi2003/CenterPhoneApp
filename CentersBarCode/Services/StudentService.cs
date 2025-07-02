@@ -49,10 +49,10 @@ public class StudentService : IStudentService
             // 3. Convert API response to Student entities
             var students = studentsFromApi.Select(apiStudent => new Student
             {
-                StudentId = apiStudent.StudentId,
-                StudentCode = apiStudent.StudentCode,
-                StudentName = apiStudent.StudentName,
-                StudentGroup = apiStudent.StudentGroup,
+                StudentId = apiStudent.Id,
+                StudentCode = apiStudent.Code,
+                StudentName = apiStudent.FullName,
+                StudentGroup = apiStudent.GroupName,
                 PhoneNumber = apiStudent.PhoneNumber,
                 ParentPhone1 = apiStudent.ParentPhone1,
                 ParentPhone2 = apiStudent.ParentPhone2,

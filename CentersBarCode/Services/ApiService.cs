@@ -9,10 +9,13 @@ namespace CentersBarCode.Services;
 
 public interface IApiService
 {
+    Task<Result<ValidateAuthenticationResponse>> ValidateAuthenticationAsync(string email, string token);
     Task<List<StudentApiResponse>> GetStudentsAsync(string bearerToken);
     Task<List<CenterApiResponse>> GetCentersAsync(string bearerToken);
+    Task<Result> ExportStudentAttendanceAsync(string bearerToken);
+    Task<StudentApiResponse> GetStudentByPhoneAsync(string bearerToken, string phone);
+    Task<StudentApiResponse> AttachStudentWithCodeAsync(string bearerToken, Guid studentId, string code);
     Task<ApiConfiguration> LoadApiConfigurationAsync();
-    Task<Result<ValidateAuthenticationResponse>> ValidateAuthenticationAsync(string email, string token);
 }
 
 public class ApiService : IApiService
@@ -58,8 +61,12 @@ public class ApiService : IApiService
             _apiConfig = new ApiConfiguration
             {
                 BaseUrl = "https://e9c0-41-237-212-199.ngrok-free.app",
-                StudentsEndpoint = "/centers-api/students/list",
-                CentersEndpoint = "/centers-api/centers/list",
+                GetStudentsEndpoint = "/centers-api/students/list",
+                GetStudentByPhoneEndpoint = "/centers-api/students/by-phone",
+                GetStudentByCodeEndpoint = "/centers-api/students/by-code",
+                SetStudentAttendanceEndpoint = "/centers-api/attendance/set",
+                AttachStudentToCodeEndpoint = "/centers-api/students/attach-code",
+                GetCentersEndpoint = "/centers-api/centers/list",
                 AuthenticationEndpoint = "/auth/login"
             };
 
@@ -72,7 +79,7 @@ public class ApiService : IApiService
         try
         {
             var config = await LoadApiConfigurationAsync();
-            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.StudentsEndpoint}";
+            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.GetStudentsEndpoint}";
 
             _logger.LogInformation("Making Students API call to: {RequestUri}", requestUri);
             var authRequest = new
@@ -104,11 +111,11 @@ public class ApiService : IApiService
                 });
                 if (studentsResult.IsSuccess)
                 {
-                    return studentsResult.Value.Data;
+                    return studentsResult.Value?.Data ?? new List<StudentApiResponse>();
                 }
                 else
                 {
-                    throw new Exception(studentsResult.Error.Description);
+                    throw new Exception(studentsResult.Error?.Description ?? "Unknown error");
                 }
             }
             else
@@ -137,7 +144,7 @@ public class ApiService : IApiService
         try
         {
             var config = await LoadApiConfigurationAsync();
-            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.CentersEndpoint}";
+            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.GetCentersEndpoint}";
 
             _logger.LogInformation("Making Centers API call to: {RequestUri}", requestUri);
             // Create request payload
@@ -171,11 +178,11 @@ public class ApiService : IApiService
 
                 if (centersResult.IsSuccess)
                 {
-                    return centersResult.Value.Data;
+                    return centersResult.Value?.Data ?? new List<CenterApiResponse>();
                 }
                 else
                 {
-                    throw new Exception(centersResult.Error.Description);
+                    throw new Exception(centersResult.Error?.Description ?? "Unknown error");
                 }
             }
             else
@@ -232,8 +239,15 @@ public class ApiService : IApiService
                 PropertyNameCaseInsensitive = true
             });
 
-
-            return validateResponse;
+            return validateResponse ?? new Result<ValidateAuthenticationResponse>
+            {
+                IsSuccess = false,
+                Error = new Error
+                {
+                    Description = "Invalid response from authentication API",
+                    Code = "InvalidResponse"
+                }
+            };
         }
         catch (Exception ex)
         {
@@ -247,6 +261,198 @@ public class ApiService : IApiService
                     Code = "ApiValidationError"
                 }
             };
+        }
+    }
+
+    public async Task<Result> ExportStudentAttendanceAsync(string bearerToken)
+    {
+        try
+        {
+            var config = await LoadApiConfigurationAsync();
+            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.SetStudentAttendanceEndpoint}";
+
+            _logger.LogInformation("Making Export Student Attendance API call to: {RequestUri}", requestUri);
+
+            // Set authorization header
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+
+            // Add common headers
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var response = await _httpClient.PostAsync(requestUri, null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Export Student Attendance API response received successfully");
+
+                var result = JsonSerializer.Deserialize<Result>(responseContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result ?? new Result { IsSuccess = true };
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Export Student Attendance API call failed with status: {StatusCode}, Content: {ErrorContent}",
+                    response.StatusCode, errorContent);
+
+                return new Result
+                {
+                    IsSuccess = false,
+                    Error = new Error
+                    {
+                        Code = response.StatusCode.ToString(),
+                        Description = $"Export failed with status: {response.StatusCode}. {errorContent}"
+                    }
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while exporting student attendance");
+            return new Result
+            {
+                IsSuccess = false,
+                Error = new Error
+                {
+                    Code = "ExportError",
+                    Description = $"Failed to export student attendance: {ex.Message}"
+                }
+            };
+        }
+        finally
+        {
+            // Clear authorization header for security
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+        }
+    }
+
+    public async Task<StudentApiResponse> GetStudentByPhoneAsync(string bearerToken, string phone)
+    {
+        try
+        {
+            var config = await LoadApiConfigurationAsync();
+            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.GetStudentByPhoneEndpoint}";
+
+            _logger.LogInformation("Making Students API call to: {RequestUri}", requestUri);
+
+            // Set authorization header
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+
+            // Add common headers
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var response = await _httpClient.GetAsync(requestUri + $"/{phone}");
+            if (response.IsSuccessStatusCode)
+            {
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Students API response received successfully");
+
+                var studentsResult = JsonSerializer.Deserialize<Result<StudentApiResponse>>(responseContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                if (studentsResult.IsSuccess)
+                {
+                    return studentsResult.Value ?? new StudentApiResponse();
+                }
+                else
+                {
+                    throw new Exception(studentsResult.Error?.Description ?? "Unknown error");
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Students API call failed with status: {StatusCode}, Content: {ErrorContent}",
+                    response.StatusCode, errorContent);
+
+                throw new HttpRequestException($"Students API call failed with status: {response.StatusCode}. {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while calling students API");
+            throw new InvalidOperationException($"Failed to fetch students: {ex.Message}", ex);
+        }
+        finally
+        {
+            // Clear authorization header for security
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+        }
+    }
+
+    public async Task<StudentApiResponse> AttachStudentWithCodeAsync(string bearerToken, Guid studentId, string code)
+    {
+        try
+        {
+            var config = await LoadApiConfigurationAsync();
+            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.AttachStudentToCodeEndpoint}";
+
+            _logger.LogInformation("Making Attach Student With Code API call to: {RequestUri}", requestUri);
+
+            // Create request payload
+            var attachRequest = new
+            {
+                StudentId = studentId,
+                Code = code
+            };
+
+            var jsonContent = JsonSerializer.Serialize(attachRequest);
+            using var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+            // Set authorization header
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+
+            // Add common headers
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var response = await _httpClient.PostAsync(requestUri, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Attach Student With Code API response received successfully");
+
+                var studentResult = JsonSerializer.Deserialize<Result<StudentApiResponse>>(responseContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (studentResult.IsSuccess)
+                {
+                    return studentResult.Value ?? new StudentApiResponse();
+                }
+                else
+                {
+                    throw new Exception(studentResult.Error?.Description ?? "Unknown error");
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Attach Student With Code API call failed with status: {StatusCode}, Content: {ErrorContent}",
+                    response.StatusCode, errorContent);
+
+                throw new HttpRequestException($"Attach Student With Code API call failed with status: {response.StatusCode}. {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while attaching student with code");
+            throw new InvalidOperationException($"Failed to attach student with code: {ex.Message}", ex);
+        }
+        finally
+        {
+            // Clear authorization header for security
+            _httpClient.DefaultRequestHeaders.Authorization = null;
         }
     }
 }
