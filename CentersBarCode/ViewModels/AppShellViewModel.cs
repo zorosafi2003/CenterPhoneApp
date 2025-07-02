@@ -20,6 +20,12 @@ public partial class AppShellViewModel : BaseViewModel
     private string _userEmail = string.Empty;
 
     [ObservableProperty]
+    private string _teacherName = string.Empty;
+
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
     private bool _showFlyoutItems;
 
     [ObservableProperty]
@@ -56,6 +62,8 @@ public partial class AppShellViewModel : BaseViewModel
         HasCentersBadge = false;
         IsAuthenticated = _authenticationService.IsAuthenticated;
         UserEmail = _authenticationService.UserEmail ?? string.Empty;
+        TeacherName = _authenticationService.TeacherName ?? string.Empty;
+        StudentName = _authenticationService.FullName ?? string.Empty;
         ShowFlyoutItems = _authenticationService.IsAuthenticated;
         Title = "Centers Barcode App";
         
@@ -77,6 +85,8 @@ public partial class AppShellViewModel : BaseViewModel
         {
             IsAuthenticated = isAuthenticated;
             UserEmail = _authenticationService.UserEmail ?? string.Empty;
+            TeacherName = _authenticationService.TeacherName ?? string.Empty;
+            StudentName = _authenticationService.FullName ?? string.Empty;
             ShowFlyoutItems = isAuthenticated;
             
             System.Diagnostics.Debug.WriteLine($"Authentication state changed: {isAuthenticated}, ShowFlyoutItems: {ShowFlyoutItems}");

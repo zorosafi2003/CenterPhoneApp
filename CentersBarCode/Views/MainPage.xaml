@@ -7,7 +7,8 @@
     xmlns:vm="clr-namespace:CentersBarCode.ViewModels"
     xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
     Title="Centers Barcode Scanner"
-    x:DataType="vm:MainViewModel">
+    x:DataType="vm:MainViewModel"
+    Shell.BackgroundColor="Gray">
 
     <Grid RowDefinitions="Auto,*,Auto">
         <!--  Main Content  -->
@@ -23,6 +24,7 @@
             <!--  Centers Dropdown  -->
             <Picker
                 Title="Select Center"
+                FontSize="20"
                 HorizontalOptions="FillAndExpand"
                 ItemsSource="{Binding Centers}"
                 SelectedItem="{Binding SelectedCenter}" />
@@ -40,10 +42,12 @@
             Grid.Row="0"
             Grid.RowSpan="3"
             BackgroundColor="Black"
-            IsVisible="{Binding IsQrScannerVisible}">
+            IsVisible="{Binding IsQrScannerVisible}"
+            RowDefinitions="Auto,Auto,2*,*">
 
             <zxing:CameraBarcodeReaderView
                 x:Name="cameraView"
+                Grid.Row="2"
                 BarcodesDetected="CameraView_BarCodeDetected"
                 CameraLocation="Rear"
                 HeightRequest="150"
@@ -52,45 +56,81 @@
                 VerticalOptions="Fill"
                 WidthRequest="300" />
 
+            <Button
+                Grid.Row="1"
+                Margin="50,0,0,0"
+                BackgroundColor="Transparent"
+                BorderColor="Transparent"
+                Clicked="ToggleFlash_Clicked"
+                FontSize="24"
+                HeightRequest="40"
+                HorizontalOptions="End"
+                Text="💡"
+                WidthRequest="40" />
             <!--  Scan Frame for visual indication  -->
-            <Grid HorizontalOptions="Center" VerticalOptions="Center">
+            <Grid
+                Grid.Row="2"
+                ColumnDefinitions="*,Auto"
+                HorizontalOptions="Center"
+                RowSpacing="10"
+                VerticalOptions="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
                 <Frame
+                    Grid.Row="1"
+                    Grid.Column="0"
                     Padding="2"
                     BackgroundColor="Transparent"
                     BorderColor="White"
                     CornerRadius="10"
                     HasShadow="False"
                     HeightRequest="150"
+                    HorizontalOptions="Center"
                     WidthRequest="250" />
-
                 <Label
-                    Margin="0,-30,0,0"
+                    Grid.Row="0"
+                    Grid.Column="0"
                     FontSize="14"
                     HorizontalOptions="Center"
                     Text="Position Barcode inside frame"
                     TextColor="White"
-                    VerticalOptions="Start" />
+                    VerticalOptions="Center" />
+
             </Grid>
 
             <!--  Controls Grid  -->
-            <Grid Padding="20" RowDefinitions="Auto,*,Auto">
+            <Grid
+                Grid.Row="0"
+                Padding="20"
+                RowDefinitions="Auto,*,Auto">
                 <!--  Top controls  -->
-                <HorizontalStackLayout
+                <VerticalStackLayout
                     Grid.Row="0"
-                    HorizontalOptions="End"
+                    HorizontalOptions="Center"
                     Spacing="10">
-                    <Button
+                    <Label
                         BackgroundColor="Transparent"
-                        BorderColor="Transparent"
-                        Clicked="ToggleFlash_Clicked"
                         FontSize="24"
-                        HeightRequest="40"
-                        Text="💡"
-                        WidthRequest="40" />
-                </HorizontalStackLayout>
+                        HorizontalTextAlignment="Center"
+                        Text="{Binding TeacherName}"
+                        TextColor="#FFFFFF" />
+                    <Label
+                        BackgroundColor="Transparent"
+                        FontSize="18"
+                        HorizontalTextAlignment="Center"
+                        Text="{Binding SelectedCenter}"
+                        TextColor="#FFFFFF" />
 
-                <!--  Middle section - empty to allow camera view  -->
 
+                </VerticalStackLayout>
+            </Grid>
+            <Grid
+                Grid.Row="3"
+                Padding="20"
+                RowDefinitions="Auto,*,Auto">
                 <!--  Bottom controls  -->
                 <VerticalStackLayout
                     Grid.Row="2"
@@ -101,6 +141,7 @@
                         BackgroundColor="Green"
                         Clicked="CaptureQrCode_Clicked"
                         HorizontalOptions="Center"
+                        IsVisible="False"
                         Text="Capture BarCode"
                         TextColor="White" />
 
@@ -136,44 +177,42 @@
                         FontSize="18"
                         HorizontalOptions="Center"
                         Text="Scanned QR Code" />
-                    
+
                     <Label
-                        Margin="0,10,0,0"
                         Grid.Row="1"
+                        Margin="0,10,0,0"
                         FontAttributes="Bold"
                         HorizontalOptions="Start"
                         Text="{Binding ScannedCode, StringFormat='Code: {0}'}"
                         VerticalOptions="Start" />
-                        
+
                     <Label
-                         Margin="0,10,0,0"
                         Grid.Row="2"
+                        Margin="0,10,0,0"
                         FontAttributes="Bold"
                         HorizontalOptions="Start"
                         Text="{Binding ScannedName, StringFormat='Name: {0}'}"
                         VerticalOptions="Start" />
-                        
+
                     <Label
-                         Margin="0,10,0,0"
                         Grid.Row="3"
+                        Margin="0,10,0,0"
                         FontAttributes="Bold"
                         HorizontalOptions="Start"
                         Text="{Binding ScannedCenter, StringFormat='Center: {0}'}"
                         VerticalOptions="Start" />
 
-                    <!-- Loading indicator and buttons -->
+                    <!--  Loading indicator and buttons  -->
                     <StackLayout Grid.Row="4" Margin="0,20,0,0">
-                        <!-- Activity Indicator for saving -->
-                        <ActivityIndicator 
-                            IsVisible="{Binding IsSaving}"
-                            IsRunning="{Binding IsSaving}"
-                            Color="Green"
-                            HorizontalOptions="Center" />
-                        
-                        <!-- Buttons -->
-                        <HorizontalStackLayout
+                        <!--  Activity Indicator for saving  -->
+                        <ActivityIndicator
                             HorizontalOptions="Center"
-                            Spacing="30">
+                            IsRunning="{Binding IsSaving}"
+                            IsVisible="{Binding IsSaving}"
+                            Color="Green" />
+
+                        <!--  Buttons  -->
+                        <HorizontalStackLayout HorizontalOptions="Center" Spacing="30">
                             <Button
                                 BackgroundColor="Green"
                                 Command="{Binding SaveQrCodeCommand}"

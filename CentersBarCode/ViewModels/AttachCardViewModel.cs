@@ -5,6 +5,8 @@ namespace CentersBarCode.ViewModels;
 public partial class AttachCardViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
+    private readonly IAuthenticationService _authenticationService;
+
     private string _currentPhoneNumber = string.Empty;
 
     [ObservableProperty]
@@ -25,15 +27,24 @@ public partial class AttachCardViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isProcessing;
 
-    public AttachCardViewModel(IDatabaseService databaseService)
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+
+    public AttachCardViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
+        _authenticationService = authenticationService;
+
         PhoneNumber = string.Empty;
         IsSearchEnabled = false;
         IsQrScannerVisible = false;
         IsCameraInitialized = false;
         ScannedQrText = string.Empty;
         IsProcessing = false;
+
+        StudentName = _authenticationService.FullName ?? string.Empty;
+
         Title = "Attach Card";
     }
 
