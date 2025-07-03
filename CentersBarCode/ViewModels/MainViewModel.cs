@@ -74,6 +74,7 @@ public partial class MainViewModel : BaseViewModel
         try
         {
             await _databaseService.InitializeAsync();
+            await LoadCentersAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
 
         }

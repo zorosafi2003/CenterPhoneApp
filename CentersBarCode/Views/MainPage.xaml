@@ -43,7 +43,7 @@
             Grid.RowSpan="3"
             BackgroundColor="Black"
             IsVisible="{Binding IsQrScannerVisible}"
-            RowDefinitions="Auto,Auto,2*,*">
+            RowDefinitions="Auto,*,*,*">
 
             <zxing:CameraBarcodeReaderView
                 x:Name="cameraView"

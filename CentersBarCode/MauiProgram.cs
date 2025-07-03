@@ -52,9 +52,14 @@ public static class MauiProgram
 		builder.Services.AddTransient<Views.RecordsPage>();
 		builder.Services.AddTransient<Views.AttachCardPage>();
 		builder.Services.AddSingleton<Views.SplashScreen>();
-		
-		// Add essentials for secure storage
-		builder.Services.AddSingleton<ISecureStorage>(SecureStorage.Default);
+        builder.Services.AddSingleton<IGoogleAuthService, GoogleAuthService>();
+        builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+        builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddSingleton<App>();
+
+
+        // Add essentials for secure storage
+        builder.Services.AddSingleton<ISecureStorage>(SecureStorage.Default);
 
 		return builder.Build();
 	}
