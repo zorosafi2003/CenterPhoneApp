@@ -76,8 +76,6 @@ public partial class MainViewModel : BaseViewModel
             await _databaseService.InitializeAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
             
-            // Load centers from database
-            await LoadCentersAsync();
         }
         catch (Exception ex)
         {
@@ -96,26 +94,7 @@ public partial class MainViewModel : BaseViewModel
             {
                 Centers.Add(center);
             }
-            
-            // If no centers in database, add some default ones
-            if (Centers.Count == 0)
-            {
-                var defaultCenters = new[]
-                {
-                    new Center("1", "Center 1"),
-                    new Center("2", "Center 2"), 
-                    new Center("3", "Center 3"),
-                    new Center("4", "Center 4"),
-                    new Center("5", "Center 5")
-                };
-                
-                foreach (var center in defaultCenters)
-                {
-                    await _databaseService.SaveCenterAsync(center);
-                    Centers.Add(center);
-                }
-            }
-            
+                    
             System.Diagnostics.Debug.WriteLine($"Loaded {Centers.Count} centers");
         }
         catch (Exception ex)

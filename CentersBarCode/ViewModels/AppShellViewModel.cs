@@ -255,11 +255,6 @@ public partial class AppShellViewModel : BaseViewModel
             var bearerToken = _authenticationService.BearerToken;
             if (string.IsNullOrEmpty(bearerToken))
             {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Error", 
-                        "You must be logged in to import students.", "OK");
-                }
                 return;
             }
 
@@ -344,13 +339,7 @@ public partial class AppShellViewModel : BaseViewModel
             
             if (success)
             {
-                await UpdateCentersCountAsync();
-                
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Success", 
-                        $"Successfully imported {CentersCount} centers!", "OK");
-                }
+                await UpdateCentersCountAsync();  
             }
             else
             {
@@ -359,16 +348,6 @@ public partial class AppShellViewModel : BaseViewModel
                     await Application.Current.MainPage.DisplayAlert("Warning", 
                         "No centers were imported. Please check your connection and try again.", "OK");
                 }
-            }
-        }
-        catch (HttpRequestException httpEx)
-        {
-            System.Diagnostics.Debug.WriteLine($"HTTP error during centers import: {httpEx.Message}");
-            
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Network Error", 
-                    "Failed to connect to the server. Please check your internet connection and try again.", "OK");
             }
         }
         catch (Exception ex)
