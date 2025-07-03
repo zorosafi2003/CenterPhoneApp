@@ -74,7 +74,6 @@
                 VerticalOptions="Fill"
                 WidthRequest="300" />
 
-            <!--  Scan Frame for visual indication  -->
             <StackLayout
                 Grid.Row="2"
                 Margin="0,-30,0,0"
@@ -114,6 +113,60 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
+
+                <StackLayout
+                    Grid.Row="2"
+                    Margin="0,-30,0,0"
+                    HorizontalOptions="Center"
+                    Orientation="Horizontal"
+                    VerticalOptions="Start">
+                    <Label
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Margin="0,0,0,0"
+                        BorderColor="Transparent"
+                        Clicked="ToggleFlash_Clicked"
+                        FontSize="24"
+                        HeightRequest="40"
+                        HorizontalOptions="Center"
+                        Text="💡"
+                        WidthRequest="40" />
+                </StackLayout>
+
+                <!--  Scan Frame for visual indication  -->
+                <Grid Grid.Row="2" ColumnDefinitions="*,Auto" />
+                <!--  Top controls  -->
+                <VerticalStackLayout
+                    Grid.Row="0"
+                    HorizontalOptions="Center"
+                    Spacing="10">
+                    <Label
+                        BackgroundColor="Transparent"
+                        FontSize="24"
+                        HorizontalTextAlignment="Center"
+                        Text="{Binding TeacherName}"
+                        TextColor="#FFFFFF" />
+                    <Label
+                        BackgroundColor="Transparent"
+                        FontSize="24"
+                        HorizontalTextAlignment="Center"
+                        Text="{Binding PhoneNumber}"
+                        TextColor="#FFFFFF" />
+                    <Label
+                        HorizontalTextAlignment="Center"
+                        IsVisible="False"
+                        RowSpacing="10"
+                        Text="{Binding StudentName}"
+                        TextColor="#FFFFFF"
+                        VerticalOptions="Center" />
+                </VerticalStackLayout>
+
+            </Grid>
+            <!--  Controls Grid  -->
+            <Grid
+                Grid.Row="3"
+                Padding="20"
+                RowDefinitions="Auto,*,Auto">
 
                 <Frame
                     Grid.Row="1"

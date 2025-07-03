@@ -339,7 +339,7 @@ public partial class AppShellViewModel : BaseViewModel
 
             if (success)
             {
-                await UpdateCentersCountAsync();
+                await UpdateCentersCountAsync();  
             }
             else
             {
