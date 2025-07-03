@@ -100,8 +100,8 @@ public partial class RecordsViewModel : BaseViewModel
                 CenterId = record.CenterId
             };
 
-            await _databaseService.DeleteQrCodeRecordAsync(qrRecord);
-
+           // await _databaseService.DeleteQrCodeRecordAsync(qrRecord);
+            
             Records.Remove(record);
             RecordsCount = Records.Count;
             HasRecords = Records.Count > 0;
@@ -175,7 +175,7 @@ public partial class RecordsViewModel : BaseViewModel
 // Display model for records in the UI
 public class QrCodeRecordDisplay
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Date { get; set; } = string.Empty;

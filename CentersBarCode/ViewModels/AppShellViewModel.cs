@@ -6,6 +6,7 @@ public partial class AppShellViewModel : BaseViewModel
     private readonly IAuthenticationService _authenticationService;
     private readonly IStudentService _studentService;
     private readonly ICenterService _centerService;
+    private readonly IApiService _apiService;
 
     [ObservableProperty]
     private int _recordsCount;
@@ -35,24 +36,25 @@ public partial class AppShellViewModel : BaseViewModel
     private bool _hasStudentsBadge;
 
     [ObservableProperty]
-    private bool _isImportingStudents;
-
-    [ObservableProperty]
     private int _centersCount;
 
     [ObservableProperty]
     private bool _hasCentersBadge;
 
     [ObservableProperty]
-    private bool _isImportingCenters;
+    private bool _isAutoImporting;
+
+    [ObservableProperty]
+    private bool _isAutoExporting;
 
     public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
-        IStudentService studentService, ICenterService centerService)
+        IStudentService studentService, ICenterService centerService , IApiService ApiService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
         _studentService = studentService;
         _centerService = centerService;
+        _apiService = ApiService;
 
         RecordsCount = 0;
         HasBadge = false;
@@ -165,6 +167,128 @@ public partial class AppShellViewModel : BaseViewModel
         }
     }
 
+    // Command to import students
+    private async Task ImportStudentsAsync()
+    {
+        if (IsAutoImporting)
+        {
+            System.Diagnostics.Debug.WriteLine("Student import already in progress, ignoring request");
+            return;
+        }
+
+        try
+        {
+            IsAutoImporting = true;
+
+            var bearerToken = _authenticationService.BearerToken;
+            if (string.IsNullOrEmpty(bearerToken))
+            {
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine("Starting student import process");
+
+            var success = await _studentService.ImportStudentsAsync(bearerToken);
+
+            if (success)
+            {
+                await UpdateStudentsCountAsync();
+            }
+            else
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Warning",
+                        "No students were imported. Please check your connection and try again.", "OK");
+                }
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            System.Diagnostics.Debug.WriteLine($"HTTP error during student import: {httpEx.Message}");
+
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Network Error",
+                    "Failed to connect to the server. Please check your internet connection and try again.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during student import: {ex.Message}");
+
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error",
+                    $"Failed to import students: {ex.Message}", "OK");
+            }
+        }
+        finally
+        {
+            IsAutoImporting = false;
+            System.Diagnostics.Debug.WriteLine("Student import process completed");
+        }
+    }
+
+    // Command to import centers 
+    private async Task ImportCentersAsync()
+    {
+        if (IsAutoImporting)
+        {
+            System.Diagnostics.Debug.WriteLine("Centers import already in progress, ignoring request");
+            return;
+        }
+
+        try
+        {
+            IsAutoImporting = true;
+
+            var bearerToken = _authenticationService.BearerToken;
+            if (string.IsNullOrEmpty(bearerToken))
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Error",
+                        "You must be logged in to import centers.", "OK");
+                }
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine("Starting centers import process");
+
+            var success = await _centerService.ImportCentersAsync(bearerToken);
+
+            if (success)
+            {
+                await UpdateCentersCountAsync();
+            }
+            else
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Warning",
+                        "No centers were imported. Please check your connection and try again.", "OK");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during centers import: {ex.Message}");
+
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error",
+                    $"Failed to import centers: {ex.Message}", "OK");
+            }
+        }
+        finally
+        {
+            IsAutoImporting = false;
+            System.Diagnostics.Debug.WriteLine("Centers import process completed");
+        }
+    }
+
+    [RelayCommand]
     private async Task AutoImportDataAsync()
     {
         try
@@ -182,6 +306,13 @@ public partial class AppShellViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine($"Error during auto-import: {ex.Message}");
         }
+    }
+
+    [RelayCommand]
+    private async Task AutoExportDataAsync()
+    {
+       var result = await  _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken);
+        IsAutoExporting = true;
     }
 
     // Command to refresh the badge manually
@@ -238,134 +369,6 @@ public partial class AppShellViewModel : BaseViewModel
         }
     }
 
-    // Command to import students
-    [RelayCommand]
-    private async Task ImportStudentsAsync()
-    {
-        if (IsImportingStudents)
-        {
-            System.Diagnostics.Debug.WriteLine("Student import already in progress, ignoring request");
-            return;
-        }
-
-        try
-        {
-            IsImportingStudents = true;
-
-            var bearerToken = _authenticationService.BearerToken;
-            if (string.IsNullOrEmpty(bearerToken))
-            {
-                return;
-            }
-
-            System.Diagnostics.Debug.WriteLine("Starting student import process");
-
-            var success = await _studentService.ImportStudentsAsync(bearerToken);
-
-            if (success)
-            {
-                await UpdateStudentsCountAsync();
-
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Success",
-                        $"Successfully imported {StudentsCount} students!", "OK");
-                }
-            }
-            else
-            {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Warning",
-                        "No students were imported. Please check your connection and try again.", "OK");
-                }
-            }
-        }
-        catch (HttpRequestException httpEx)
-        {
-            System.Diagnostics.Debug.WriteLine($"HTTP error during student import: {httpEx.Message}");
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Network Error",
-                    "Failed to connect to the server. Please check your internet connection and try again.", "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error during student import: {ex.Message}");
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Error",
-                    $"Failed to import students: {ex.Message}", "OK");
-            }
-        }
-        finally
-        {
-            IsImportingStudents = false;
-            System.Diagnostics.Debug.WriteLine("Student import process completed");
-        }
-    }
-
-    // Command to import centers
-    [RelayCommand]
-    private async Task ImportCentersAsync()
-    {
-        if (IsImportingCenters)
-        {
-            System.Diagnostics.Debug.WriteLine("Centers import already in progress, ignoring request");
-            return;
-        }
-
-        try
-        {
-            IsImportingCenters = true;
-
-            var bearerToken = _authenticationService.BearerToken;
-            if (string.IsNullOrEmpty(bearerToken))
-            {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Error",
-                        "You must be logged in to import centers.", "OK");
-                }
-                return;
-            }
-
-            System.Diagnostics.Debug.WriteLine("Starting centers import process");
-
-            var success = await _centerService.ImportCentersAsync(bearerToken);
-
-            if (success)
-            {
-                await UpdateCentersCountAsync();  
-            }
-            else
-            {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Warning",
-                        "No centers were imported. Please check your connection and try again.", "OK");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error during centers import: {ex.Message}");
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Error",
-                    $"Failed to import centers: {ex.Message}", "OK");
-            }
-        }
-        finally
-        {
-            IsImportingCenters = false;
-            System.Diagnostics.Debug.WriteLine("Centers import process completed");
-        }
-    }
 
     // Command to logout
     [RelayCommand]

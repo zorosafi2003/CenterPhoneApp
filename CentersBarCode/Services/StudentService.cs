@@ -33,7 +33,7 @@ public class StudentService : IStudentService
 
             // 1. Fetch students from API
             var studentsFromApi = await _apiService.GetStudentsAsync(bearerToken);
-            
+
             if (studentsFromApi == null || !studentsFromApi.Any())
             {
                 _logger.LogWarning("No students received from API");
@@ -60,24 +60,12 @@ public class StudentService : IStudentService
             }).ToList();
 
             // 4. Save all students to database
-            int savedCount = 0;
-            foreach (var student in students)
-            {
-                try
-                {
-                    await _databaseService.SaveStudentAsync(student);
-                    savedCount++;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to save student: {StudentId}", student.StudentId);
-                }
-            }
+            await _databaseService.SaveStudentsAsync(students);
 
-            _logger.LogInformation("Successfully imported {SavedCount} out of {TotalCount} students", 
-                savedCount, students.Count);
+            _logger.LogInformation("Successfully imported {SavedCount} out of {TotalCount} students",
+                students.Count, students.Count);
 
-            return savedCount > 0;
+            return students.Count > 0;
         }
         catch (Exception ex)
         {

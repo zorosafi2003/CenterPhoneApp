@@ -236,7 +236,8 @@ public partial class LoginPage : ContentPage
             var studentService = new Services.StudentService(databaseService, apiService, studentLogger);
             var centerService = new Services.CenterService(databaseService, apiService, centerLogger);
 
-            var appShellViewModel = new ViewModels.AppShellViewModel(databaseService, authService, studentService, centerService);
+            var appShellViewModel = new ViewModels.AppShellViewModel(databaseService, authService, studentService,
+                centerService , apiService);
             var appShell = new AppShell(appShellViewModel);
 
             Application.Current.MainPage = appShell;

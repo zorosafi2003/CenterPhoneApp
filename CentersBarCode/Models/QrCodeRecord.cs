@@ -2,16 +2,19 @@ using SQLite;
 
 namespace CentersBarCode.Models;
 
-[Table("QrCodeRecords")]
+[Table("StudentAttendanceRecords")]
 public class QrCodeRecord
 {
-    [PrimaryKey, AutoIncrement]
-    public int Id { get; set; }
+    [PrimaryKey]
+    public Guid Id { get; set; }
 
     public Guid CenterId { get; set; }
     
     public string Code { get; set; } = string.Empty;
-    
+
+    public Guid? StudentId { get; set; }
+    public string StudentName { get; set; } = string.Empty;
+
     public DateTime CreatedDateUtc { get; set; }
 
     public QrCodeRecord()

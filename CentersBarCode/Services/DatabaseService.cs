@@ -8,17 +8,17 @@ public interface IDatabaseService
     Task InitializeAsync();
     Task<int> SaveQrCodeRecordAsync(QrCodeRecord record);
     Task<List<QrCodeRecord>> GetQrCodeRecordsAsync();
-    Task<List<QrCodeRecord>> GetQrCodeRecordsByCenterIdAsync(Guid centerId);
-    Task<int> DeleteQrCodeRecordAsync(QrCodeRecord record);
-    
+    Task DeleteQrCodeRecordsAsync(List<QrCodeRecord> records);
+
     // Student operations
-    Task<int> SaveStudentAsync(Student student);
+    Task SaveStudentsAsync(List<Student> students);
     Task<List<Student>> GetAllStudentsAsync();
     Task<Student?> GetStudentByCodeAsync(string studentCode);
     Task<Student?> GetStudentByIdAsync(string studentId);
+    Task<Student?> GetStudentByPhoneAsync(string phone);
     Task ClearAllStudentsAsync();
     Task<int> DeleteStudentAsync(Student student);
-    
+
     // Center operations
     Task<int> SaveCenterAsync(Center center);
     Task<List<Center>> GetAllCentersAsync();
@@ -64,17 +64,9 @@ public class DatabaseService : IDatabaseService
         try
         {
             var database = await GetDatabaseAsync();
-            
-            if (record.Id == 0)
-            {
-                // Insert new record
-                return await database.InsertAsync(record);
-            }
-            else
-            {
-                // Update existing record
-                return await database.UpdateAsync(record);
-            }
+            record.Id = Guid.NewGuid();
+            return await database.InsertAsync(record);
+
         }
         catch (Exception ex)
         {
@@ -99,29 +91,15 @@ public class DatabaseService : IDatabaseService
         }
     }
 
-    public async Task<List<QrCodeRecord>> GetQrCodeRecordsByCenterIdAsync(Guid centerId)
+    public async Task DeleteQrCodeRecordsAsync(List<QrCodeRecord> records)
     {
         try
         {
             var database = await GetDatabaseAsync();
-            return await database.Table<QrCodeRecord>()
-                               .Where(r => r.CenterId == centerId)
-                               .OrderByDescending(r => r.CreatedDateUtc)
-                               .ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting QR code records by center: {ex.Message}");
-            return new List<QrCodeRecord>();
-        }
-    }
-
-    public async Task<int> DeleteQrCodeRecordAsync(QrCodeRecord record)
-    {
-        try
-        {
-            var database = await GetDatabaseAsync();
-            return await database.DeleteAsync(record);
+            foreach (var item in records)
+            {
+                await database.DeleteAsync(item);
+            }
         }
         catch (Exception ex)
         {
@@ -134,21 +112,15 @@ public class DatabaseService : IDatabaseService
 
     #region Student Operations
 
-    public async Task<int> SaveStudentAsync(Student student)
+    public async Task SaveStudentsAsync(List<Student> students)
     {
         try
         {
             var database = await GetDatabaseAsync();
-            
-            if (student.Id == 0)
+
+            foreach (var item in students)
             {
-                // Insert new student
-                return await database.InsertAsync(student);
-            }
-            else
-            {
-                // Update existing student
-                return await database.UpdateAsync(student);
+                await database.InsertAsync(item);
             }
         }
         catch (Exception ex)
@@ -181,6 +153,21 @@ public class DatabaseService : IDatabaseService
             var database = await GetDatabaseAsync();
             return await database.Table<Student>()
                                .Where(s => s.StudentCode == studentCode)
+                               .FirstOrDefaultAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error getting student by code: {ex.Message}");
+            return null;
+        }
+    }
+    public async Task<Student?> GetStudentByPhoneAsync(string phone)
+    {
+        try
+        {
+            var database = await GetDatabaseAsync();
+            return await database.Table<Student>()
+                               .Where(s => s.PhoneNumber == phone)
                                .FirstOrDefaultAsync();
         }
         catch (Exception ex)
@@ -244,7 +231,7 @@ public class DatabaseService : IDatabaseService
         try
         {
             var database = await GetDatabaseAsync();
-            
+
             // Check if center exists
             var existingCenter = await GetCenterByIdAsync(center.Id);
             if (existingCenter != null)
