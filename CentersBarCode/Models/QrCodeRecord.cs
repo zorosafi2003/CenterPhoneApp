@@ -19,7 +19,7 @@ public class QrCodeRecord
 
     public QrCodeRecord()
     {
-        CreatedDateUtc = DateTime.UtcNow;
+        CreatedDateUtc = DateTime.Now;
     }
 
     public QrCodeRecord(Guid centerId, string code) : this()
@@ -27,4 +27,21 @@ public class QrCodeRecord
         CenterId = centerId;
         Code = code;
     }
+}
+
+
+
+// DTO for API response
+public class CreateStudentAttendanceRequest
+{
+    public List<DataChildOfCreateStudentAttendanceRequest> Data { get; set; }
+}
+
+public class DataChildOfCreateStudentAttendanceRequest
+{
+    public Guid? StudentId { get; set; }
+    public string StudentCode { get; set; }
+    public Guid CenterId { get; set; }
+    public Guid LocalId { get; set; }
+    public DateTime CreateDate { get; set; }
 }

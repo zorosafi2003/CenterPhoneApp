@@ -308,7 +308,7 @@
                                 Color="#28A745" />
                             <Label
                                 FontSize="14"
-                                Text="Importing students..."
+                                Text="Exporting data..."
                                 TextColor="#6C757D"
                                 VerticalOptions="Center" />
                         </StackLayout>

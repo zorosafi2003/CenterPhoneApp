@@ -12,7 +12,7 @@ public interface IApiService
     Task<Result<ValidateAuthenticationResponse>> ValidateAuthenticationAsync(string email, string token);
     Task<List<StudentApiResponse>> GetStudentsAsync(string bearerToken);
     Task<List<CenterApiResponse>> GetCentersAsync(string bearerToken);
-    Task<Result> ExportStudentAttendanceAsync(string bearerToken);
+    Task<Result> ExportStudentAttendanceAsync(string bearerToken , CreateStudentAttendanceRequest model );
     Task<StudentApiResponse> GetStudentByPhoneAsync(string bearerToken, string phone);
     Task<StudentApiResponse> AttachStudentWithCodeAsync(string bearerToken, Guid studentId, string code);
     Task<ApiConfiguration> LoadApiConfigurationAsync();
@@ -264,7 +264,7 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<Result> ExportStudentAttendanceAsync(string bearerToken)
+    public async Task<Result> ExportStudentAttendanceAsync(string bearerToken, CreateStudentAttendanceRequest model)
     {
         try
         {
@@ -273,6 +273,10 @@ public class ApiService : IApiService
 
             _logger.LogInformation("Making Export Student Attendance API call to: {RequestUri}", requestUri);
 
+
+            var jsonContent = JsonSerializer.Serialize(model);
+            using var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
             // Set authorization header
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
 
@@ -280,7 +284,7 @@ public class ApiService : IApiService
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var response = await _httpClient.PostAsync(requestUri, null);
+            var response = await _httpClient.PostAsync(requestUri, content);
 
             if (response.IsSuccessStatusCode)
             {

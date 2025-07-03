@@ -48,7 +48,7 @@ public partial class AppShellViewModel : BaseViewModel
     private bool _isAutoExporting;
 
     public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
-        IStudentService studentService, ICenterService centerService , IApiService ApiService)
+        IStudentService studentService, ICenterService centerService, IApiService ApiService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
@@ -311,8 +311,76 @@ public partial class AppShellViewModel : BaseViewModel
     [RelayCommand]
     private async Task AutoExportDataAsync()
     {
-       var result = await  _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken);
-        IsAutoExporting = true;
+        if (IsAutoExporting)
+        {
+            System.Diagnostics.Debug.WriteLine("Centers import already in progress, ignoring request");
+            return;
+        }
+
+        try
+        {
+            IsAutoExporting = true;
+
+            var bearerToken = _authenticationService.BearerToken;
+            if (string.IsNullOrEmpty(bearerToken))
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Error",
+                        "You must be logged in to import centers.", "OK");
+                }
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine("Starting centers import process");
+            var list = await _databaseService.GetQrCodeRecordsAsync();
+            if (list.Count > 0)
+            {
+                var sendedItems = list.Take(100).ToList();
+
+                var model = new CreateStudentAttendanceRequest
+                {
+                    Data = sendedItems.Select(record => new DataChildOfCreateStudentAttendanceRequest
+                    {
+                        CenterId = record.CenterId,
+                        LocalId = record.Id,
+                        StudentCode = record.Code,
+                        StudentId = record.StudentId,
+                        CreateDate = record.CreatedDateUtc
+                    }).ToList()
+                };
+                var success = await _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken, model);
+
+                if (success.IsSuccess)
+                {
+                    await _databaseService.DeleteQrCodeRecordsAsync(sendedItems);
+                    await UpdateRecordsCountAsync();
+                }
+                else
+                {
+                    if (Application.Current?.MainPage != null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Warning",
+                            "No centers were imported. Please check your connection and try again.", "OK");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during centers import: {ex.Message}");
+
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error",
+                    $"Failed to import centers: {ex.Message}", "OK");
+            }
+        }
+        finally
+        {
+            IsAutoExporting = false;
+            System.Diagnostics.Debug.WriteLine("Centers import process completed");
+        }
     }
 
     // Command to refresh the badge manually
