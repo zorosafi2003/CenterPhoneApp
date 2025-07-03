@@ -5,6 +5,8 @@ namespace CentersBarCode.ViewModels;
 public partial class AttachCardViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
+    private readonly IAuthenticationService _authenticationService;
+
     private string _currentPhoneNumber = string.Empty;
 
     [ObservableProperty]
@@ -25,15 +27,28 @@ public partial class AttachCardViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isProcessing;
 
-    public AttachCardViewModel(IDatabaseService databaseService)
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
+    private string _teacherName = string.Empty;
+
+
+    public AttachCardViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
+        _authenticationService = authenticationService;
+
         PhoneNumber = string.Empty;
         IsSearchEnabled = false;
         IsQrScannerVisible = false;
         IsCameraInitialized = false;
         ScannedQrText = string.Empty;
         IsProcessing = false;
+
+        StudentName = _authenticationService.FullName ?? string.Empty;
+        TeacherName = _authenticationService.TeacherName ?? string.Empty;
+
         Title = "Attach Card";
     }
 
@@ -67,11 +82,11 @@ public partial class AttachCardViewModel : BaseViewModel
         {
             IsProcessing = true;
             ScannedQrText = qrText;
-            
+
             // Close QR scanner first
             IsQrScannerVisible = false;
             IsCameraInitialized = false;
-            
+
             // Create a record with the phone number and QR code
             var qrRecord = new QrCodeRecord(
                 centerId: Guid.NewGuid(), // You might want to use a specific center ID for card attachments
@@ -80,21 +95,21 @@ public partial class AttachCardViewModel : BaseViewModel
 
             // Save to database
             await _databaseService.SaveQrCodeRecordAsync(qrRecord);
-            
+
             // Refresh the records badge
             await RefreshRecordsBadgeAsync();
-            
+
             // Clear the phone number input after successful attachment
             PhoneNumber = string.Empty;
             _currentPhoneNumber = string.Empty;
-            
+
             // Show success notification
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Success", 
+                await Application.Current.MainPage.DisplayAlert("Success",
                     "Card successfully attached!", "OK");
             }
-            
+
             System.Diagnostics.Debug.WriteLine($"Card attached: Phone={_currentPhoneNumber}, QR={qrText}");
         }
         catch (Exception ex)
@@ -102,7 +117,7 @@ public partial class AttachCardViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Error processing card attachment: {ex.Message}");
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     $"Failed to attach card: {ex.Message}", "OK");
             }
         }
@@ -123,7 +138,7 @@ public partial class AttachCardViewModel : BaseViewModel
         // Check if phone number has exactly 11 digits
         var digitsOnly = Regex.Replace(PhoneNumber ?? string.Empty, @"\D", "");
         IsSearchEnabled = digitsOnly.Length == 11;
-        
+
         System.Diagnostics.Debug.WriteLine($"Phone validation: {digitsOnly} - Length: {digitsOnly.Length} - Enabled: {IsSearchEnabled}");
     }
 

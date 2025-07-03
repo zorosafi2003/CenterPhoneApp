@@ -20,6 +20,12 @@ public partial class AppShellViewModel : BaseViewModel
     private string _userEmail = string.Empty;
 
     [ObservableProperty]
+    private string _teacherName = string.Empty;
+
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
     private bool _showFlyoutItems;
 
     [ObservableProperty]
@@ -40,14 +46,14 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isImportingCenters;
 
-    public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService, 
+    public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
         IStudentService studentService, ICenterService centerService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
         _studentService = studentService;
         _centerService = centerService;
-        
+
         RecordsCount = 0;
         HasBadge = false;
         StudentsCount = 0;
@@ -56,14 +62,16 @@ public partial class AppShellViewModel : BaseViewModel
         HasCentersBadge = false;
         IsAuthenticated = _authenticationService.IsAuthenticated;
         UserEmail = _authenticationService.UserEmail ?? string.Empty;
+        TeacherName = _authenticationService.TeacherName ?? string.Empty;
+        StudentName = _authenticationService.FullName ?? string.Empty;
         ShowFlyoutItems = _authenticationService.IsAuthenticated;
         Title = "Centers Barcode App";
-        
+
         // Subscribe to authentication state changes
         _authenticationService.AuthenticationStateChanged += OnAuthenticationStateChanged;
-        
+
         // Initialize the badge counts
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
             await UpdateRecordsCountAsync();
             await UpdateStudentsCountAsync();
@@ -77,10 +85,12 @@ public partial class AppShellViewModel : BaseViewModel
         {
             IsAuthenticated = isAuthenticated;
             UserEmail = _authenticationService.UserEmail ?? string.Empty;
+            TeacherName = _authenticationService.TeacherName ?? string.Empty;
+            StudentName = _authenticationService.FullName ?? string.Empty;
             ShowFlyoutItems = isAuthenticated;
-            
+
             System.Diagnostics.Debug.WriteLine($"Authentication state changed: {isAuthenticated}, ShowFlyoutItems: {ShowFlyoutItems}");
-            
+
             // Auto-import data after successful authentication
             if (isAuthenticated)
             {
@@ -96,7 +106,7 @@ public partial class AppShellViewModel : BaseViewModel
             await _databaseService.InitializeAsync();
             var records = await _databaseService.GetQrCodeRecordsAsync();
             var newCount = records.Count;
-            
+
             // Only update if the count has changed or if it's the first time
             if (RecordsCount != newCount)
             {
@@ -118,7 +128,7 @@ public partial class AppShellViewModel : BaseViewModel
         try
         {
             var count = await _studentService.GetStudentsCountAsync();
-            
+
             if (StudentsCount != count)
             {
                 StudentsCount = count;
@@ -139,7 +149,7 @@ public partial class AppShellViewModel : BaseViewModel
         try
         {
             var count = await _centerService.GetCentersCountAsync();
-            
+
             if (CentersCount != count)
             {
                 CentersCount = count;
@@ -162,7 +172,7 @@ public partial class AppShellViewModel : BaseViewModel
             if (!string.IsNullOrEmpty(_authenticationService.BearerToken))
             {
                 System.Diagnostics.Debug.WriteLine("Auto-importing centers and students after successful login");
-                
+
                 // Import centers first, then students
                 await ImportCentersAsync();
                 await ImportStudentsAsync();
@@ -241,29 +251,24 @@ public partial class AppShellViewModel : BaseViewModel
         try
         {
             IsImportingStudents = true;
-            
+
             var bearerToken = _authenticationService.BearerToken;
             if (string.IsNullOrEmpty(bearerToken))
             {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Error", 
-                        "You must be logged in to import students.", "OK");
-                }
                 return;
             }
 
             System.Diagnostics.Debug.WriteLine("Starting student import process");
 
             var success = await _studentService.ImportStudentsAsync(bearerToken);
-            
+
             if (success)
             {
                 await UpdateStudentsCountAsync();
-                
+
                 if (Application.Current?.MainPage != null)
                 {
-                    await Application.Current.MainPage.DisplayAlert("Success", 
+                    await Application.Current.MainPage.DisplayAlert("Success",
                         $"Successfully imported {StudentsCount} students!", "OK");
                 }
             }
@@ -271,7 +276,7 @@ public partial class AppShellViewModel : BaseViewModel
             {
                 if (Application.Current?.MainPage != null)
                 {
-                    await Application.Current.MainPage.DisplayAlert("Warning", 
+                    await Application.Current.MainPage.DisplayAlert("Warning",
                         "No students were imported. Please check your connection and try again.", "OK");
                 }
             }
@@ -279,20 +284,20 @@ public partial class AppShellViewModel : BaseViewModel
         catch (HttpRequestException httpEx)
         {
             System.Diagnostics.Debug.WriteLine($"HTTP error during student import: {httpEx.Message}");
-            
+
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Network Error", 
+                await Application.Current.MainPage.DisplayAlert("Network Error",
                     "Failed to connect to the server. Please check your internet connection and try again.", "OK");
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error during student import: {ex.Message}");
-            
+
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     $"Failed to import students: {ex.Message}", "OK");
             }
         }
@@ -316,13 +321,13 @@ public partial class AppShellViewModel : BaseViewModel
         try
         {
             IsImportingCenters = true;
-            
+
             var bearerToken = _authenticationService.BearerToken;
             if (string.IsNullOrEmpty(bearerToken))
             {
                 if (Application.Current?.MainPage != null)
                 {
-                    await Application.Current.MainPage.DisplayAlert("Error", 
+                    await Application.Current.MainPage.DisplayAlert("Error",
                         "You must be logged in to import centers.", "OK");
                 }
                 return;
@@ -331,43 +336,27 @@ public partial class AppShellViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine("Starting centers import process");
 
             var success = await _centerService.ImportCentersAsync(bearerToken);
-            
+
             if (success)
             {
                 await UpdateCentersCountAsync();
-                
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Success", 
-                        $"Successfully imported {CentersCount} centers!", "OK");
-                }
             }
             else
             {
                 if (Application.Current?.MainPage != null)
                 {
-                    await Application.Current.MainPage.DisplayAlert("Warning", 
+                    await Application.Current.MainPage.DisplayAlert("Warning",
                         "No centers were imported. Please check your connection and try again.", "OK");
                 }
-            }
-        }
-        catch (HttpRequestException httpEx)
-        {
-            System.Diagnostics.Debug.WriteLine($"HTTP error during centers import: {httpEx.Message}");
-            
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Network Error", 
-                    "Failed to connect to the server. Please check your internet connection and try again.", "OK");
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error during centers import: {ex.Message}");
-            
+
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     $"Failed to import centers: {ex.Message}", "OK");
             }
         }
@@ -386,7 +375,7 @@ public partial class AppShellViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("Logout command initiated");
             await _authenticationService.LogoutAsync();
-            
+
             // Navigate to login page
             if (Shell.Current != null)
             {

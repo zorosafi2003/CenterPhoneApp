@@ -11,7 +11,7 @@ public partial class LoginPage : ContentPage
     private readonly IGoogleAuthService _authService;
     private readonly IAuthenticationService _authenticationService;
     private bool _isAuthenticating = false;
-    
+
     public LoginPage(IGoogleAuthService authService, IAuthenticationService authenticationService)
     {
         InitializeComponent();

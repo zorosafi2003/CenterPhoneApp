@@ -38,11 +38,11 @@ public partial class RecordsViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
+
             var qrRecords = await _databaseService.GetQrCodeRecordsAsync();
-            
+
             Records.Clear();
-            
+
             foreach (var record in qrRecords)
             {
                 var displayRecord = new QrCodeRecordDisplay
@@ -53,14 +53,14 @@ public partial class RecordsViewModel : BaseViewModel
                     Date = record.CreatedDateUtc.ToString("dd/MM/yyyy HH:mm"),
                     CenterId = record.CenterId
                 };
-                
+
                 Records.Add(displayRecord);
             }
-            
+
             RecordsCount = Records.Count;
             HasRecords = Records.Count > 0;
             HasNoRecords = Records.Count == 0;
-            
+
             // Refresh the records badge in AppShell when records are loaded
             await RefreshRecordsBadgeAsync();
         }
@@ -69,7 +69,7 @@ public partial class RecordsViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Error loading records: {ex.Message}");
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     $"Failed to load records: {ex.Message}", "OK");
             }
         }
@@ -86,10 +86,10 @@ public partial class RecordsViewModel : BaseViewModel
         {
             if (Application.Current?.MainPage != null)
             {
-                bool confirm = await Application.Current.MainPage.DisplayAlert("Confirm Delete", 
-                    $"Are you sure you want to delete the record with code '{record.Code}'?", 
+                bool confirm = await Application.Current.MainPage.DisplayAlert("Confirm Delete",
+                    $"Are you sure you want to delete the record with code '{record.Code}'?",
                     "Yes", "No");
-                
+
                 if (!confirm) return;
             }
 
@@ -101,18 +101,18 @@ public partial class RecordsViewModel : BaseViewModel
             };
 
             await _databaseService.DeleteQrCodeRecordAsync(qrRecord);
-            
+
             Records.Remove(record);
             RecordsCount = Records.Count;
             HasRecords = Records.Count > 0;
             HasNoRecords = Records.Count == 0;
-            
+
             // Refresh the records badge in AppShell
             await RefreshRecordsBadgeAsync();
-            
+
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Success", 
+                await Application.Current.MainPage.DisplayAlert("Success",
                     "Record deleted successfully", "OK");
             }
         }
@@ -121,7 +121,7 @@ public partial class RecordsViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Error deleting record: {ex.Message}");
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     $"Failed to delete record: {ex.Message}", "OK");
             }
         }

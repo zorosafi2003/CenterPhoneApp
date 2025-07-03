@@ -6,6 +6,7 @@ public partial class MainViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
     private readonly ICenterService _centerService;
+    private readonly IAuthenticationService _authenticationService;
 
     [ObservableProperty]
     private ObservableCollection<Center> _centers;
@@ -37,11 +38,19 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isSaving;
 
-    public MainViewModel(IDatabaseService databaseService, ICenterService centerService)
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
+    private string _teacherName = string.Empty;
+
+    public MainViewModel(IDatabaseService databaseService, ICenterService centerService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
         _centerService = centerService;
-        
+        _authenticationService = authenticationService;
+
+
         // Initialize empty centers list - will be populated from database
         Centers = new ObservableCollection<Center>();
 
@@ -54,7 +63,8 @@ public partial class MainViewModel : BaseViewModel
         ScannedCenter = string.Empty;
         IsCameraInitialized = false;
         IsSaving = false;
-
+        StudentName = _authenticationService.FullName ?? string.Empty;
+        TeacherName = _authenticationService.TeacherName ?? string.Empty;
         // Initialize database and load centers
         InitializeAsync();
     }
@@ -65,9 +75,7 @@ public partial class MainViewModel : BaseViewModel
         {
             await _databaseService.InitializeAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
-            
-            // Load centers from database
-            await LoadCentersAsync();
+
         }
         catch (Exception ex)
         {
@@ -80,32 +88,13 @@ public partial class MainViewModel : BaseViewModel
         try
         {
             var centersFromDb = await _centerService.GetAllCentersAsync();
-            
+
             Centers.Clear();
             foreach (var center in centersFromDb)
             {
                 Centers.Add(center);
             }
-            
-            // If no centers in database, add some default ones
-            if (Centers.Count == 0)
-            {
-                var defaultCenters = new[]
-                {
-                    new Center("1", "Center 1"),
-                    new Center("2", "Center 2"), 
-                    new Center("3", "Center 3"),
-                    new Center("4", "Center 4"),
-                    new Center("5", "Center 5")
-                };
-                
-                foreach (var center in defaultCenters)
-                {
-                    await _databaseService.SaveCenterAsync(center);
-                    Centers.Add(center);
-                }
-            }
-            
+
             System.Diagnostics.Debug.WriteLine($"Loaded {Centers.Count} centers");
         }
         catch (Exception ex)
@@ -135,7 +124,7 @@ public partial class MainViewModel : BaseViewModel
         {
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     "Please ensure a center is selected and QR code is scanned.", "OK");
             }
             return;
@@ -144,7 +133,7 @@ public partial class MainViewModel : BaseViewModel
         try
         {
             IsSaving = true;
-            
+
             // Create QR code record - need to convert center ID string to Guid
             Guid centerGuid;
             if (!Guid.TryParse(SelectedCenter.Id, out centerGuid))
@@ -153,7 +142,7 @@ public partial class MainViewModel : BaseViewModel
                 centerGuid = Guid.NewGuid();
                 System.Diagnostics.Debug.WriteLine($"Created new GUID {centerGuid} for center ID {SelectedCenter.Id}");
             }
-            
+
             var qrRecord = new QrCodeRecord(
                 centerId: centerGuid,
                 code: ScannedCode
@@ -161,27 +150,27 @@ public partial class MainViewModel : BaseViewModel
 
             // Save to database
             await _databaseService.SaveQrCodeRecordAsync(qrRecord);
-            
+
             // Refresh the records badge in AppShell
             await RefreshRecordsBadgeAsync();
-            
+
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Success", 
+                await Application.Current.MainPage.DisplayAlert("Success",
                     $"QR Code saved successfully for {SelectedCenter.Name}", "OK");
             }
-            
+
             // Close the popup and reset values
             IsPopupVisible = false;
             ResetScannedData();
-            
+
             System.Diagnostics.Debug.WriteLine($"QR Code saved: CenterId={qrRecord.CenterId}, Code={qrRecord.Code}, CreatedDateUtc={qrRecord.CreatedDateUtc}");
         }
         catch (Exception ex)
         {
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     $"Failed to save QR code: {ex.Message}", "OK");
             }
             System.Diagnostics.Debug.WriteLine($"Error saving QR code: {ex}");
@@ -208,16 +197,16 @@ public partial class MainViewModel : BaseViewModel
         IsCameraInitialized = false;
         System.Diagnostics.Debug.WriteLine("QR Scanner closed");
     }
-    
+
     // Property to determine if the scan button should be enabled
     public bool CanScan => SelectedCenter != null;
-    
+
     // Update command bindings when SelectedCenter changes
     partial void OnSelectedCenterChanged(Center? value)
     {
         OnPropertyChanged(nameof(CanScan));
     }
-    
+
     // Handle camera initialization state change
     partial void OnIsCameraInitializedChanged(bool value)
     {
@@ -228,11 +217,11 @@ public partial class MainViewModel : BaseViewModel
     public void ProcessScannedQrCode(string qrText)
     {
         ScannedQrText = qrText;
-        
+
         // Example parsing logic - adjust based on your QR code format
         // Assuming QR code format is something like "CODE|NAME|CENTER" or similar
         var parts = qrText.Split('|', ';', ',');
-        
+
         if (parts.Length >= 1)
             ScannedCode = parts[0].Trim();
         if (parts.Length >= 2)

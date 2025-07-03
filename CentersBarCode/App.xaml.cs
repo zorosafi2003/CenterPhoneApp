@@ -5,10 +5,10 @@ namespace CentersBarCode;
 
 public partial class App : Application
 {
-    public App()
+    public App(IGoogleAuthService authService, IAuthenticationService authenticationService)
     {
         InitializeComponent();
-        
+
         // Start with splash screen to handle proper initialization
         MainPage = new Views.SplashScreen();
     }
