@@ -1,9 +1,9 @@
 {
-  "BaseUrl": "https://e9c0-41-237-212-199.ngrok-free.app",
+  "BaseUrl": "http://api.teachers-eg.com",
   "GetStudentsEndpoint": "/centers-api/students/list",
   "GetStudentByPhoneEndpoint": "/centers-api/students/by-phone",
   "GetStudentByCodeEndpoint": "/centers-api/students/by-code",
-  "SetStudentAttendanceEndpoint": "/centers-api/attendance/set",
+  "SetStudentAttendanceEndpoint": "/centers-api/student-attendances/create-range",
   "AttachStudentToCodeEndpoint": "/centers-api/students/attach-code",
   "GetCentersEndpoint": "/centers-api/centers/list",
   "AuthenticationEndpoint": "/auth/login"
