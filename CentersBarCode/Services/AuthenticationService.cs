@@ -6,6 +6,8 @@ public interface IAuthenticationService
 {
     bool IsAuthenticated { get; }
     string? UserEmail { get; }
+    string? TeacherName { get; }
+    string? FullName { get; }
     string? BearerToken { get; }
     Task<bool> LoginAsync(string email, string token);
     Task LogoutAsync();
@@ -26,7 +28,6 @@ public class AuthenticationService : IAuthenticationService
     public string? UserEmail => _userEmail;
     public string? BearerToken => _bearerToken;
     public string? TeacherName => _teacherName;
-
     public string? FullName => _fullName;
 
     public event EventHandler<bool>? AuthenticationStateChanged;

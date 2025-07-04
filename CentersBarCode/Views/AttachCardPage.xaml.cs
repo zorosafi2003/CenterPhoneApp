@@ -1,4 +1,9 @@
-﻿using CentersBarCode.ViewModels;
+﻿#if ANDROID
+using Android.Views.InputMethods;
+using Android.Content;
+#endif
+using CentersBarCode.ViewModels;
+using Microsoft.Maui.Platform;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 
@@ -14,7 +19,14 @@ public partial class AttachCardPage : ContentPage
         InitializeComponent();
         _viewModel = viewModel;
         BindingContext = _viewModel;
-
+        // Hook into SearchCommand execution to dismiss keyboard
+        _viewModel.SearchCommandExecuted += () =>
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                DismissKeyboard();
+            });
+        };
         RequestCameraPermissions();
     }
 
@@ -27,11 +39,37 @@ public partial class AttachCardPage : ContentPage
         {
             if (e.PropertyName == nameof(_viewModel.IsQrScannerVisible) && _viewModel.IsQrScannerVisible)
             {
+                DismissKeyboard();
                 CheckCameraPermissionAndInitialize();
             }
         };
     }
+    private void DismissKeyboard()
+    {
+        // Unfocus the entry
+        PhoneEntry.Unfocus();
 
+        // Platform-specific keyboard dismissal
+#if ANDROID
+        try
+        {
+            var context = Android.App.Application.Context;
+            var inputMethodManager = (InputMethodManager)context.GetSystemService(Context.InputMethodService);
+            if (inputMethodManager != null && Shell.Current?.Handler?.MauiContext?.Context != null)
+            {
+                var windowToken = Shell.Current.Handler.MauiContext.Context?.GetActivity()?.CurrentFocus?.WindowToken;
+                if (windowToken != null)
+                {
+                    inputMethodManager.HideSoftInputFromWindow(windowToken, HideSoftInputFlags.None);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error dismissing keyboard: {ex.Message}");
+        }
+#endif
+    }
     private async void RequestCameraPermissions()
     {
         var status = await Permissions.CheckStatusAsync<Permissions.Camera>();
@@ -231,6 +269,15 @@ public partial class AttachCardPage : ContentPage
             });
         }
     }
+    private void PhoneEntry_Completed(object sender, EventArgs e)
+    {
+        if (_viewModel.SearchCommand?.CanExecute(null) == true)
+        {
+            _viewModel.SearchCommand.Execute(null);
+        }
+
+        DismissKeyboard(); // Hide keyboard when done
+    }
 
     protected override void OnDisappearing()
     {
@@ -248,5 +295,9 @@ public partial class AttachCardPage : ContentPage
                 System.Diagnostics.Debug.WriteLine($"Error stopping camera: {ex.Message}");
             }
         }
+    }
+    private void OnSearchClicked(object sender, EventArgs e)
+    {
+        PhoneEntry_Completed(sender, e); // Triggers the same as pressing Enter
     }
 }

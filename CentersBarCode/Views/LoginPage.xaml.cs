@@ -1,8 +1,9 @@
 using CentersBarCode.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Maui.Controls;
 using System;
-using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace CentersBarCode.Views;
 
@@ -11,13 +12,34 @@ public partial class LoginPage : ContentPage
     private readonly IGoogleAuthService _authService;
     private readonly IAuthenticationService _authenticationService;
     private bool _isAuthenticating = false;
-    
+    private static bool _hasInitialized = false;
+
+
     public LoginPage(IGoogleAuthService authService, IAuthenticationService authenticationService)
     {
         InitializeComponent();
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
         Debug.WriteLine("LoginPage initialized with IGoogleAuthService and IAuthenticationService");
+        // Run splash logic only once
+        if (!_hasInitialized)
+        {
+            _hasInitialized = true;
+
+            Dispatcher.DispatchAsync(async () =>
+            {
+                try
+                {
+                    await Task.Delay(3000); // splash delay
+                    await InitializeShellAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error during splash initialization: {ex.Message}");
+                    await InitializeShellFallbackAsync();
+                }
+            });
+        }
     }
 
     protected override async void OnAppearing()
@@ -151,6 +173,104 @@ public partial class LoginPage : ContentPage
                 ResetButtonStates();
             }
             Debug.WriteLine("Login process completed");
+        }
+    }
+    private async Task InitializeShellAsync()
+    {
+        try
+        {
+            if (Application.Current == null) return;
+
+            // Get services from the service provider
+            var services = Handler?.MauiContext?.Services;
+            if (services != null)
+            {
+                // Use dependency injection
+                var appShellViewModel = services.GetRequiredService<ViewModels.AppShellViewModel>();
+                var authService = services.GetRequiredService<IAuthenticationService>();
+
+                // Create and set AppShell
+                var appShell = new AppShell(appShellViewModel);
+                Application.Current.MainPage = appShell;
+
+                // Wait a moment for shell to be ready
+                await Task.Delay(100);
+
+                // Navigate based on authentication state
+                if (authService.IsAuthenticated)
+                {
+                    Debug.WriteLine("User is authenticated, navigating to MainPage");
+                    await Shell.Current.GoToAsync("//MainPage");
+                }
+                else
+                {
+                    Debug.WriteLine("User is not authenticated, navigating to LoginPage");
+                    await Shell.Current.GoToAsync("//LoginPage");
+                }
+            }
+            else
+            {
+                await InitializeShellFallbackAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error in InitializeShellAsync: {ex.Message}");
+            await InitializeShellFallbackAsync();
+        }
+    }
+
+    private async Task InitializeShellFallbackAsync()
+    {
+        try
+        {
+            Debug.WriteLine("Using fallback shell initialization");
+
+            if (Application.Current == null) return;
+
+            // Create services manually for fallback
+            var databaseService = new Services.DatabaseService();
+
+            // Create loggers
+            var apiLogger = NullLogger<ApiService>.Instance;
+            var studentLogger = NullLogger<StudentService>.Instance;
+            var centerLogger = NullLogger<CenterService>.Instance;
+
+            var httpClient = new HttpClient();
+            var apiService = new Services.ApiService(httpClient, apiLogger);
+            var authService = new Services.AuthenticationService(apiService);
+            var studentService = new Services.StudentService(databaseService, apiService, studentLogger);
+            var centerService = new Services.CenterService(databaseService, apiService, centerLogger);
+
+            var appShellViewModel = new ViewModels.AppShellViewModel(databaseService, authService, studentService, centerService);
+            var appShell = new AppShell(appShellViewModel);
+
+            Application.Current.MainPage = appShell;
+
+            // Wait a moment for shell to be ready
+            await Task.Delay(100);
+
+            // Navigate to login page as fallback
+            await Shell.Current.GoToAsync("//LoginPage");
+            Debug.WriteLine("Fallback navigation to LoginPage completed");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Even fallback initialization failed: {ex.Message}");
+
+            // Last resort - try to show a basic page
+            if (Application.Current != null)
+            {
+                Application.Current.MainPage = new ContentPage
+                {
+                    Content = new Label
+                    {
+                        Text = "Application failed to start properly. Please restart the app.",
+                        HorizontalOptions = LayoutOptions.Center,
+                        VerticalOptions = LayoutOptions.Center
+                    }
+                };
+            }
         }
     }
 }

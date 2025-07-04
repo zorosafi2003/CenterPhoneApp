@@ -6,9 +6,16 @@ public partial class MainViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
     private readonly ICenterService _centerService;
+    private readonly IAuthenticationService _authenticationService;
 
     [ObservableProperty]
     private ObservableCollection<Center> _centers;
+
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
+    private string _teacherName = string.Empty;
 
     [ObservableProperty]
     private Center? _selectedCenter;
@@ -37,14 +44,18 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isSaving;
 
-    public MainViewModel(IDatabaseService databaseService, ICenterService centerService)
+    public MainViewModel(IDatabaseService databaseService, ICenterService centerService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
         _centerService = centerService;
+         _authenticationService = authenticationService;
+
         
         // Initialize empty centers list - will be populated from database
         Centers = new ObservableCollection<Center>();
 
+        StudentName = _authenticationService.FullName ?? string.Empty;
+        TeacherName = _authenticationService.TeacherName ?? string.Empty;
         // Initialize other properties
         IsQrScannerVisible = false;
         IsPopupVisible = false;

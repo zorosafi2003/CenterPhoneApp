@@ -5,10 +5,19 @@ namespace CentersBarCode.ViewModels;
 public partial class AttachCardViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
+    private readonly IAuthenticationService _authenticationService;
+    public event Action SearchCommandExecuted;
+
     private string _currentPhoneNumber = string.Empty;
 
     [ObservableProperty]
     private string _phoneNumber;
+
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
+    private string _teacherName = string.Empty;
 
     [ObservableProperty]
     private bool _isSearchEnabled;
@@ -25,16 +34,21 @@ public partial class AttachCardViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isProcessing;
 
-    public AttachCardViewModel(IDatabaseService databaseService)
+    public AttachCardViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
+        _authenticationService = authenticationService;
         PhoneNumber = string.Empty;
         IsSearchEnabled = false;
         IsQrScannerVisible = false;
         IsCameraInitialized = false;
         ScannedQrText = string.Empty;
         IsProcessing = false;
+
+        StudentName = _authenticationService.FullName ?? string.Empty;
+        TeacherName = _authenticationService.TeacherName ?? string.Empty;
         Title = "Attach Card";
+        
     }
 
     // Command to search/open QR scanner
@@ -48,6 +62,7 @@ public partial class AttachCardViewModel : BaseViewModel
             IsQrScannerVisible = true;
             IsCameraInitialized = true;
             System.Diagnostics.Debug.WriteLine($"Opening QR scanner for phone: {_currentPhoneNumber}");
+            SearchCommandExecuted?.Invoke();
         }
     }
 
