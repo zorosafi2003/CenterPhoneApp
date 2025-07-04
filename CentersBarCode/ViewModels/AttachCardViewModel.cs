@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace CentersBarCode.ViewModels;
 
@@ -7,12 +6,18 @@ public partial class AttachCardViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
     private readonly IAuthenticationService _authenticationService;
-    private readonly IApiService _apiService;
+    public event Action SearchCommandExecuted;
 
     private string _currentPhoneNumber = string.Empty;
 
     [ObservableProperty]
     private string _phoneNumber;
+
+    [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
+    private string _teacherName = string.Empty;
 
     [ObservableProperty]
     private bool _isSearchEnabled;
@@ -29,20 +34,10 @@ public partial class AttachCardViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isProcessing;
 
-    [ObservableProperty]
-    private string _studentName = string.Empty;
-
-    [ObservableProperty]
-    private string _teacherName = string.Empty;
-
-
-    public AttachCardViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
-        IApiService apiService)
+    public AttachCardViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
-        _apiService = apiService;
-
         PhoneNumber = string.Empty;
         IsSearchEnabled = false;
         IsQrScannerVisible = false;
@@ -50,10 +45,10 @@ public partial class AttachCardViewModel : BaseViewModel
         ScannedQrText = string.Empty;
         IsProcessing = false;
 
-        StudentName =  string.Empty;
+        StudentName = _authenticationService.FullName ?? string.Empty;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
-
         Title = "Attach Card";
+
     }
 
     // Command to search/open QR scanner
@@ -64,10 +59,10 @@ public partial class AttachCardViewModel : BaseViewModel
         {
             // Store the current phone number before opening scanner
             _currentPhoneNumber = PhoneNumber;
-            _studentName = StudentName;
             IsQrScannerVisible = true;
             IsCameraInitialized = true;
             System.Diagnostics.Debug.WriteLine($"Opening QR scanner for phone: {_currentPhoneNumber}");
+            SearchCommandExecuted?.Invoke();
         }
     }
 
@@ -138,37 +133,13 @@ public partial class AttachCardViewModel : BaseViewModel
         ValidatePhoneNumber();
     }
 
-    private async Task ValidatePhoneNumber()
+    private void ValidatePhoneNumber()
     {
         // Check if phone number has exactly 11 digits
         var digitsOnly = Regex.Replace(PhoneNumber ?? string.Empty, @"\D", "");
+        IsSearchEnabled = digitsOnly.Length == 11;
 
-        if (digitsOnly.Length == 11)
-        {
-            var student = await _databaseService.GetStudentByPhoneAsync(digitsOnly);
-
-            if (student != null)
-            {
-                IsSearchEnabled = digitsOnly.Length == 11;
-                StudentName = student.StudentName;
-            }
-            else
-            {
-               var  studentFromApi = await _apiService.GetStudentByPhoneAsync(_authenticationService.BearerToken, digitsOnly);
-                if (studentFromApi != null)
-                { 
-                    IsSearchEnabled = true;
-                    StudentName = studentFromApi.FullName;
-                }
-                else
-                {
-                    IsSearchEnabled = false;
-                    StudentName =string.Empty;
-                    await Application.Current.MainPage.DisplayAlert("Result", "this number is not exist.", "OK");
-                }
-            }
-        }     
-
+        System.Diagnostics.Debug.WriteLine($"Phone validation: {digitsOnly} - Length: {digitsOnly.Length} - Enabled: {IsSearchEnabled}");
     }
 
     private async Task RefreshRecordsBadgeAsync()
