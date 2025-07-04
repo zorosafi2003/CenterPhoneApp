@@ -47,11 +47,11 @@ public static class MauiProgram
         builder.Services.AddSingleton<ICenterService, CenterService>();
 
         // Register pages
-        builder.Services.AddTransient<Views.MainPage>();
-        builder.Services.AddTransient<Views.LoginPage>();
-        builder.Services.AddTransient<Views.RecordsPage>();
-        builder.Services.AddTransient<Views.AttachCardPage>();
-        builder.Services.AddSingleton<Views.SplashScreen>();
+        builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddTransient<RecordsPage>();
+        builder.Services.AddTransient<AttachCardPage>();
+        builder.Services.AddSingleton<SplashScreen>();
 
         // Add essentials for secure storage
         builder.Services.AddSingleton<ISecureStorage>(SecureStorage.Default);

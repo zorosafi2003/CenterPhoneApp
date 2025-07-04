@@ -6,6 +6,7 @@ public partial class AppShellViewModel : BaseViewModel
     private readonly IAuthenticationService _authenticationService;
     private readonly IStudentService _studentService;
     private readonly ICenterService _centerService;
+    private readonly IGoogleAuthService _googleAuthService; // Added
 
     [ObservableProperty]
     private int _recordsCount;
@@ -47,12 +48,14 @@ public partial class AppShellViewModel : BaseViewModel
     private bool _isImportingCenters;
 
     public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
-        IStudentService studentService, ICenterService centerService)
+        IStudentService studentService, ICenterService centerService, IGoogleAuthService googleAuthService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
         _studentService = studentService;
         _centerService = centerService;
+        _googleAuthService = googleAuthService; // Added
+
 
         RecordsCount = 0;
         HasBadge = false;
@@ -396,6 +399,7 @@ public partial class AppShellViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("Logout command initiated");
             await _authenticationService.LogoutAsync();
+            await _googleAuthService.SignOutAsync(); // Added to clear Google account
 
             // Navigate to login page
             if (Shell.Current != null)

@@ -15,10 +15,10 @@ public partial class AppShell : Shell
         BindingContext = _viewModel;
         
         // Register routes for navigation - Use absolute routes for better reliability
-        Routing.RegisterRoute("MainPage", typeof(Views.MainPage));
-        Routing.RegisterRoute("LoginPage", typeof(Views.LoginPage));
-        Routing.RegisterRoute("RecordsPage", typeof(Views.RecordsPage));
-        Routing.RegisterRoute("AttachCardPage", typeof(Views.AttachCardPage));
+        Routing.RegisterRoute("MainPage", typeof(MainPage));
+        Routing.RegisterRoute("LoginPage", typeof(LoginPage));
+        Routing.RegisterRoute("RecordsPage", typeof(RecordsPage));
+        Routing.RegisterRoute("AttachCardPage", typeof(AttachCardPage));
         
         // Subscribe to property changes to handle authentication state changes
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;

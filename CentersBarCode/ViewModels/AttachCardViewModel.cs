@@ -7,6 +7,7 @@ public partial class AttachCardViewModel : BaseViewModel
     private readonly IDatabaseService _databaseService;
     private readonly IAuthenticationService _authenticationService;
     public event Action SearchCommandExecuted;
+    public event Action CloseQrScannerCommandExecuted;
 
     private string _currentPhoneNumber = string.Empty;
 
@@ -63,12 +64,13 @@ public partial class AttachCardViewModel : BaseViewModel
             IsCameraInitialized = true;
             System.Diagnostics.Debug.WriteLine($"Opening QR scanner for phone: {_currentPhoneNumber}");
             SearchCommandExecuted?.Invoke();
+            
         }
     }
 
     // Command to close QR scanner
     [RelayCommand]
-    private void CloseQrScanner()
+    private async void CloseQrScanner()
     {
         IsQrScannerVisible = false;
         IsCameraInitialized = false;

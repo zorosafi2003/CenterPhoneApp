@@ -94,8 +94,9 @@ public partial class SplashScreen : ContentPage
             var authService = new Services.AuthenticationService(apiService);
             var studentService = new Services.StudentService(databaseService, apiService, studentLogger);
             var centerService = new Services.CenterService(databaseService, apiService, centerLogger);
+            var googleAuthService = new Services.GoogleAuthService();
 
-            var appShellViewModel = new ViewModels.AppShellViewModel(databaseService, authService, studentService, centerService);
+            var appShellViewModel = new ViewModels.AppShellViewModel(databaseService, authService, studentService, centerService, googleAuthService);
             var appShell = new AppShell(appShellViewModel);
 
             Application.Current.MainPage = appShell;
