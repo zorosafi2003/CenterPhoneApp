@@ -89,21 +89,20 @@
                     BackgroundColor="Transparent"
                     FontSize="24"
                     HorizontalTextAlignment="Center"
-                    IsVisible="{Binding Source={RelativeSource Self}, Converter={StaticResource IsAttachCardViewModel}}"
                     Text="{Binding TeacherName}"
                     TextColor="#FFFFFF" />
                 <Label
                     BackgroundColor="Transparent"
                     FontSize="24"
                     HorizontalTextAlignment="Center"
-                    IsVisible="{Binding Source={RelativeSource Self}, Converter={StaticResource IsAttachCardViewModel}}"
+                    IsVisible="{Binding PhoneNumber}"
                     Text="{Binding PhoneNumber}"
                     TextColor="#FFFFFF" />
                 <Label
                     BackgroundColor="Transparent"
                     FontSize="24"
                     HorizontalTextAlignment="Center"
-                    IsVisible="{Binding Source={RelativeSource Self}, Converter={StaticResource IsMainViewModel}}"
+                    IsVisible="{Binding SelectedCenter}"
                     Text="{Binding SelectedCenter}"
                     TextColor="#FFFFFF" />
             </VerticalStackLayout>
