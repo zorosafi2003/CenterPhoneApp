@@ -6,7 +6,8 @@
     xmlns:local="clr-namespace:CentersBarCode.ViewModels"
     xmlns:vm="clr-namespace:CentersBarCode.ViewModels"
     Title="{Binding Title}"
-    x:DataType="vm:RecordsViewModel">
+    x:DataType="vm:RecordsViewModel"
+    Shell.BackgroundColor="Gray">
 
     <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsLoading}">
         <ScrollView>

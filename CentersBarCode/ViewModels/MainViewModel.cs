@@ -12,6 +12,12 @@ public partial class MainViewModel : BaseViewModel
     private ObservableCollection<Center> _centers;
 
     [ObservableProperty]
+    private string _studentName = string.Empty;
+
+    [ObservableProperty]
+    private string _teacherName = string.Empty;
+
+    [ObservableProperty]
     private Center? _selectedCenter;
 
     [ObservableProperty]
@@ -38,12 +44,6 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isSaving;
 
-    [ObservableProperty]
-    private string _studentName = string.Empty;
-
-    [ObservableProperty]
-    private string _teacherName = string.Empty;
-
     public MainViewModel(IDatabaseService databaseService, ICenterService centerService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
@@ -54,6 +54,8 @@ public partial class MainViewModel : BaseViewModel
         // Initialize empty centers list - will be populated from database
         Centers = new ObservableCollection<Center>();
 
+        StudentName = _authenticationService.FullName ?? string.Empty;
+        TeacherName = _authenticationService.TeacherName ?? string.Empty;
         // Initialize other properties
         IsQrScannerVisible = false;
         IsPopupVisible = false;
@@ -63,8 +65,7 @@ public partial class MainViewModel : BaseViewModel
         ScannedCenter = string.Empty;
         IsCameraInitialized = false;
         IsSaving = false;
-        StudentName = _authenticationService.FullName ?? string.Empty;
-        TeacherName = _authenticationService.TeacherName ?? string.Empty;
+
         // Initialize database and load centers
         InitializeAsync();
     }
@@ -74,9 +75,10 @@ public partial class MainViewModel : BaseViewModel
         try
         {
             await _databaseService.InitializeAsync();
-            await LoadCentersAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
 
+            // Load centers from database
+            await LoadCentersAsync();
         }
         catch (Exception ex)
         {
@@ -94,6 +96,25 @@ public partial class MainViewModel : BaseViewModel
             foreach (var center in centersFromDb)
             {
                 Centers.Add(center);
+            }
+
+            // If no centers in database, add some default ones
+            if (Centers.Count == 0)
+            {
+                var defaultCenters = new[]
+                {
+                    new Center("1", "Center 1"),
+                    new Center("2", "Center 2"),
+                    new Center("3", "Center 3"),
+                    new Center("4", "Center 4"),
+                    new Center("5", "Center 5")
+                };
+
+                foreach (var center in defaultCenters)
+                {
+                    await _databaseService.SaveCenterAsync(center);
+                    Centers.Add(center);
+                }
             }
 
             System.Diagnostics.Debug.WriteLine($"Loaded {Centers.Count} centers");

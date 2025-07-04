@@ -16,7 +16,7 @@ namespace CentersBarCode.Services
     public class GoogleAuthService : IGoogleAuthService
     {
         // Client ID from your Google Developer Console - make sure this matches your OAuth configuration
-        private const string WebClientId = "61665556806-56m6slh77n3vbnbduic59i3h915a7cub.apps.googleusercontent.com";
+        private const string WebClientId = "613797922873-meolimpa6po0vcc8aql1r8asd6sq7n7n.apps.googleusercontent.com";
         
         #if ANDROID
         // Sign-in client
@@ -32,125 +32,125 @@ namespace CentersBarCode.Services
         public GoogleAuthService()
         {
 #if ANDROID
-        InitializeGoogleSignIn();
+            InitializeGoogleSignIn();
 #endif
         }
 
 #if ANDROID
-    /// <summary>
-    /// Check if the device is connected to the internet
-    /// </summary>
-    private bool IsConnectedToInternet()
-    {
-        try
+        /// <summary>
+        /// Check if the device is connected to the internet
+        /// </summary>
+        private bool IsConnectedToInternet()
         {
-            if (Platform.CurrentActivity == null)
-                return false;
-            
-            ConnectivityManager? connectivityManager = Platform.CurrentActivity.GetSystemService(global::Android.Content.Context.ConnectivityService) as ConnectivityManager;
-            if (connectivityManager == null)
-                return false;
-            
-            // For Android 6.0+
-            NetworkInfo? activeNetwork = connectivityManager.ActiveNetworkInfo;
-            bool isConnected = activeNetwork != null && activeNetwork.IsConnected;
-            
-            Debug.WriteLine($"Internet connection check: {isConnected}");
-            return isConnected;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error checking internet connection: {ex.Message}");
-            return true; // Assume connected if we can't check
-        }
-    }
+            try
+            {
+                if (Platform.CurrentActivity == null)
+                    return false;
 
-    /// <summary>
-    /// Initializes the Google Sign-In client with appropriate options
-    /// </summary>
-    private void InitializeGoogleSignIn()
-    {
-        try
-        {
-            // Verify internet connection first
-            if (!IsConnectedToInternet())
-            {
-                Debug.WriteLine("No internet connection detected during initialization");
-                return;
+                ConnectivityManager? connectivityManager = Platform.CurrentActivity.GetSystemService(global::Android.Content.Context.ConnectivityService) as ConnectivityManager;
+                if (connectivityManager == null)
+                    return false;
+
+                // For Android 6.0+
+                NetworkInfo? activeNetwork = connectivityManager.ActiveNetworkInfo;
+                bool isConnected = activeNetwork != null && activeNetwork.IsConnected;
+
+                Debug.WriteLine($"Internet connection check: {isConnected}");
+                return isConnected;
             }
-            
-            // Check if Google Play Services is available
-            var availability = GoogleApiAvailability.Instance;
-            var resultCode = availability.IsGooglePlayServicesAvailable(Platform.CurrentActivity);
-            
-            if (resultCode != ConnectionResult.Success)
+            catch (Exception ex)
             {
-                bool isResolvable = availability.IsUserResolvableError(resultCode);
-                Debug.WriteLine($"Google Play Services is not available. Result code: {resultCode}, Resolvable: {isResolvable}");
-                
-                if (isResolvable && Platform.CurrentActivity != null)
+                Debug.WriteLine($"Error checking internet connection: {ex.Message}");
+                return true; // Assume connected if we can't check
+            }
+        }
+
+        /// <summary>
+        /// Initializes the Google Sign-In client with appropriate options
+        /// </summary>
+        private void InitializeGoogleSignIn()
+        {
+            try
+            {
+                // Verify internet connection first
+                if (!IsConnectedToInternet())
                 {
-                    // Show dialog to help user resolve the issue
-                    availability.GetErrorDialog(Platform.CurrentActivity, resultCode, 9000)?.Show();
+                    Debug.WriteLine("No internet connection detected during initialization");
+                    return;
                 }
-                return;
-            }
-            
-            // Create Google Sign In configuration with correct settings
-            var gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DefaultSignIn)
-                .RequestEmail()           // Request email first - basic profile
-                .RequestProfile()          // Request profile
-                .RequestId()              // Request ID
-                .RequestIdToken(WebClientId)   // Request ID token
-                .Build();
 
-            // Get the Google client with the options
-            if (Platform.CurrentActivity != null)
-            {
-                _signInClient = GoogleSignIn.GetClient(Platform.CurrentActivity, gso);
-                Debug.WriteLine("GoogleSignInClient initialized successfully");
-                
-                // Clear any previous sign-in silently - this helps with account switching issues
-                ClearSignInSilently();
-            }
-            else
-            {
-                Debug.WriteLine("CurrentActivity is null during GoogleSignIn initialization");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error initializing Google Sign-In: {ex}");
-        }
-    }
-    
-    /// <summary>
-    /// Clear sign-in state silently (doesn't show UI)
-    /// </summary>
-    private void ClearSignInSilently()
-    {
-        try
-        {
-            if (_signInClient != null)
-            {
-                _signInClient.SignOutAsync().ContinueWith(task => 
+                // Check if Google Play Services is available
+                var availability = GoogleApiAvailability.Instance;
+                var resultCode = availability.IsGooglePlayServicesAvailable(Platform.CurrentActivity);
+
+                if (resultCode != ConnectionResult.Success)
                 {
-                    if (task.IsCompletedSuccessfully)
+                    bool isResolvable = availability.IsUserResolvableError(resultCode);
+                    Debug.WriteLine($"Google Play Services is not available. Result code: {resultCode}, Resolvable: {isResolvable}");
+
+                    if (isResolvable && Platform.CurrentActivity != null)
                     {
-                        Debug.WriteLine("Silent sign-out completed successfully");
+                        // Show dialog to help user resolve the issue
+                        availability.GetErrorDialog(Platform.CurrentActivity, resultCode, 9000)?.Show();
                     }
-                    else if (task.Exception != null)
-                    {
-                        Debug.WriteLine($"Silent sign-out error: {task.Exception.Message}");
-                    }
-                });
+                    return;
+                }
+
+                // Create Google Sign In configuration with correct settings
+                var gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DefaultSignIn)
+                    .RequestEmail()           // Request email first - basic profile
+                    .RequestProfile()          // Request profile
+                    .RequestId()              // Request ID
+                    .RequestIdToken(WebClientId)   // Request ID token
+                    .Build();
+
+                // Get the Google client with the options
+                if (Platform.CurrentActivity != null)
+                {
+                    _signInClient = GoogleSignIn.GetClient(Platform.CurrentActivity, gso);
+                    Debug.WriteLine("GoogleSignInClient initialized successfully");
+
+                    // Clear any previous sign-in silently - this helps with account switching issues
+                    ClearSignInSilently();
+                }
+                else
+                {
+                    Debug.WriteLine("CurrentActivity is null during GoogleSignIn initialization");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error initializing Google Sign-In: {ex}");
             }
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Clear sign-in state silently (doesn't show UI)
+        /// </summary>
+        private void ClearSignInSilently()
         {
-            Debug.WriteLine($"Error in ClearSignInSilently: {ex.Message}");
+            try
+            {
+                if (_signInClient != null)
+                {
+                    _signInClient.SignOutAsync().ContinueWith(task =>
+                    {
+                        if (task.IsCompletedSuccessfully)
+                        {
+                            Debug.WriteLine("Silent sign-out completed successfully");
+                        }
+                        else if (task.Exception != null)
+                        {
+                            Debug.WriteLine($"Silent sign-out error: {task.Exception.Message}");
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in ClearSignInSilently: {ex.Message}");
+            }
         }
-    }
 #endif
 
         /// <summary>
@@ -176,110 +176,110 @@ namespace CentersBarCode.Services
                 Debug.WriteLine("Starting SignInWithGoogleAsync");
 
 #if ANDROID
-            // Verify internet connection first
-            if (!IsConnectedToInternet())
-            {
-                Debug.WriteLine("No internet connection detected");
-                return new AuthResult
+                // Verify internet connection first
+                if (!IsConnectedToInternet())
                 {
-                    IsSuccessful = false,
-                    ErrorMessage = "No internet connection. Please check your network settings and try again."
-                };
-            }
-            
-            // Check if Google Play Services is available
-            if (Platform.CurrentActivity != null)
-            {
-                var availability = GoogleApiAvailability.Instance;
-                var resultCode = availability.IsGooglePlayServicesAvailable(Platform.CurrentActivity);
-                
-                if (resultCode != ConnectionResult.Success)
-                {
-                    bool isResolvable = availability.IsUserResolvableError(resultCode);
-                    Debug.WriteLine($"Google Play Services is not available. Result code: {resultCode}, Resolvable: {isResolvable}");
-                    
-                    if (isResolvable)
+                    Debug.WriteLine("No internet connection detected");
+                    return new AuthResult
                     {
-                        // Show dialog to help user resolve the issue
-                        availability.GetErrorDialog(Platform.CurrentActivity, resultCode, 9000)?.Show();
+                        IsSuccessful = false,
+                        ErrorMessage = "No internet connection. Please check your network settings and try again."
+                    };
+                }
+
+                // Check if Google Play Services is available
+                if (Platform.CurrentActivity != null)
+                {
+                    var availability = GoogleApiAvailability.Instance;
+                    var resultCode = availability.IsGooglePlayServicesAvailable(Platform.CurrentActivity);
+
+                    if (resultCode != ConnectionResult.Success)
+                    {
+                        bool isResolvable = availability.IsUserResolvableError(resultCode);
+                        Debug.WriteLine($"Google Play Services is not available. Result code: {resultCode}, Resolvable: {isResolvable}");
+
+                        if (isResolvable)
+                        {
+                            // Show dialog to help user resolve the issue
+                            availability.GetErrorDialog(Platform.CurrentActivity, resultCode, 9000)?.Show();
+                        }
+
+                        return new AuthResult
+                        {
+                            IsSuccessful = false,
+                            ErrorMessage = "Google Play Services is not available on this device."
+                        };
                     }
-                    
-                    return new AuthResult
-                    {
-                        IsSuccessful = false,
-                        ErrorMessage = "Google Play Services is not available on this device."
-                    };
                 }
-            }
-            
-            // Reinitialize client if needed
-            if (_signInClient == null && Platform.CurrentActivity != null)
-            {
-                Debug.WriteLine("Reinitializing Google Sign-In client");
-                InitializeGoogleSignIn();
-                
-                if (_signInClient == null)
+
+                // Reinitialize client if needed
+                if (_signInClient == null && Platform.CurrentActivity != null)
                 {
-                    return new AuthResult
+                    Debug.WriteLine("Reinitializing Google Sign-In client");
+                    InitializeGoogleSignIn();
+
+                    if (_signInClient == null)
                     {
-                        IsSuccessful = false,
-                        ErrorMessage = "Could not initialize Google Sign-In. Please try again."
-                    };
+                        return new AuthResult
+                        {
+                            IsSuccessful = false,
+                            ErrorMessage = "Could not initialize Google Sign-In. Please try again."
+                        };
+                    }
                 }
-            }
 #endif
 
                 // Create a new task completion source before any async operations
                 _authTcs = new TaskCompletionSource<AuthResult>();
 
 #if ANDROID
-            // Start the sign-in intent
-            if (_signInClient != null && Platform.CurrentActivity != null)
-            {
-                try
+                // Start the sign-in intent
+                if (_signInClient != null && Platform.CurrentActivity != null)
                 {
-                    Debug.WriteLine("Starting Google Sign-In intent");
-                    var signInIntent = _signInClient.SignInIntent;
-                    
-                    // Force a network check before starting the intent
-                    if (!IsConnectedToInternet())
+                    try
                     {
-                        Debug.WriteLine("Network connection lost before starting intent");
+                        Debug.WriteLine("Starting Google Sign-In intent");
+                        var signInIntent = _signInClient.SignInIntent;
+
+                        // Force a network check before starting the intent
+                        if (!IsConnectedToInternet())
+                        {
+                            Debug.WriteLine("Network connection lost before starting intent");
+                            _authTcs.TrySetResult(new AuthResult
+                            {
+                                IsSuccessful = false,
+                                ErrorMessage = "Network connection lost. Please check your internet connection."
+                            });
+                        }
+                        else
+                        {
+                            Platform.CurrentActivity.StartActivityForResult(signInIntent, GoogleAuthHelper.RC_SIGN_IN);
+                            Debug.WriteLine("Google Sign-In intent started successfully");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error starting sign-in intent: {ex}");
                         _authTcs.TrySetResult(new AuthResult
                         {
                             IsSuccessful = false,
-                            ErrorMessage = "Network connection lost. Please check your internet connection."
+                            ErrorMessage = $"Error starting Google Sign-In: {ex.Message}"
                         });
                     }
-                    else
-                    {
-                        Platform.CurrentActivity.StartActivityForResult(signInIntent, GoogleAuthHelper.RC_SIGN_IN);
-                        Debug.WriteLine("Google Sign-In intent started successfully");
-                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Debug.WriteLine($"Error starting sign-in intent: {ex}");
-                    _authTcs.TrySetResult(new AuthResult 
-                    { 
-                        IsSuccessful = false, 
-                        ErrorMessage = $"Error starting Google Sign-In: {ex.Message}" 
+                    string errorMessage = _signInClient == null
+                        ? "Google Sign-In client is null"
+                        : "Current activity is null";
+
+                    Debug.WriteLine(errorMessage);
+                    _authTcs.TrySetResult(new AuthResult
+                    {
+                        IsSuccessful = false,
+                        ErrorMessage = $"Google Sign-In is not properly initialized: {errorMessage}"
                     });
                 }
-            }
-            else
-            {
-                string errorMessage = _signInClient == null 
-                    ? "Google Sign-In client is null" 
-                    : "Current activity is null";
-                    
-                Debug.WriteLine(errorMessage);
-                _authTcs.TrySetResult(new AuthResult 
-                { 
-                    IsSuccessful = false, 
-                    ErrorMessage = $"Google Sign-In is not properly initialized: {errorMessage}" 
-                });
-            }
 #elif IOS || MACCATALYST
                 // iOS implementation would go here
                 Debug.WriteLine("iOS Google Sign-In not implemented");
@@ -341,74 +341,74 @@ namespace CentersBarCode.Services
         public async Task SignOutAsync()
         {
 #if ANDROID
-        try
-        {
-            if (_signInClient != null)
+            try
             {
-                Debug.WriteLine("Signing out from Google");
-                await _signInClient.SignOutAsync();
-                Debug.WriteLine("Google Sign-Out completed successfully");
+                if (_signInClient != null)
+                {
+                    Debug.WriteLine("Signing out from Google");
+                    await _signInClient.SignOutAsync();
+                    Debug.WriteLine("Google Sign-Out completed successfully");
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Google Sign-Out error: {ex}");
-        }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Google Sign-Out error: {ex}");
+            }
 #endif
 
             await Task.CompletedTask;
         }
 
 #if ANDROID
-    /// <summary>
-    /// Callback method for successful Google Sign-In
-    /// </summary>
-    /// <param name="account">The GoogleSignInAccount</param>
-    /// <param name="isSuccessful">Whether the sign-in was successful</param>
-    public void OnGoogleSignInSuccess(GoogleSignInAccount account, bool isSuccessful)
-    {
-        if (_authTcs == null)
+        /// <summary>
+        /// Callback method for successful Google Sign-In
+        /// </summary>
+        /// <param name="account">The GoogleSignInAccount</param>
+        /// <param name="isSuccessful">Whether the sign-in was successful</param>
+        public void OnGoogleSignInSuccess(GoogleSignInAccount account, bool isSuccessful)
         {
-            Debug.WriteLine("Warning: OnGoogleSignInSuccess called but _authTcs is null");
-            return;
-        }
-        
-        if (isSuccessful && account != null)
-        {
-            Debug.WriteLine($"Google Sign-In successful for: {account.Email}");
-            Debug.WriteLine($"ID Token: {(string.IsNullOrEmpty(account.IdToken) ? "null" : "present")}");
-            Debug.WriteLine($"Server Auth Code: {(string.IsNullOrEmpty(account.ServerAuthCode) ? "null" : "present")}");
-            
-            // Create a successful auth result
-            var authResult = new AuthResult
+            if (_authTcs == null)
             {
-                IsSuccessful = true,
-                UserEmail = account.Email,
-                IdToken = account.IdToken,
-                ServerAuthCode = account.ServerAuthCode
-            };
-            
-            // Complete the task
-            _authTcs.TrySetResult(authResult);
-        }
-        else
-        {
-            string errorMessage = account == null 
-                ? "Account information could not be retrieved" 
-                : "Sign-in was not successful";
-                
-            Debug.WriteLine($"Google Sign-In error: {errorMessage}");
-            
-            // Handle failure
-            var result = new AuthResult
+                Debug.WriteLine("Warning: OnGoogleSignInSuccess called but _authTcs is null");
+                return;
+            }
+
+            if (isSuccessful && account != null)
             {
-                IsSuccessful = false,
-                ErrorMessage = errorMessage
-            };
-            
-            _authTcs.TrySetResult(result);
+                Debug.WriteLine($"Google Sign-In successful for: {account.Email}");
+                Debug.WriteLine($"ID Token: {(string.IsNullOrEmpty(account.IdToken) ? "null" : "present")}");
+                Debug.WriteLine($"Server Auth Code: {(string.IsNullOrEmpty(account.ServerAuthCode) ? "null" : "present")}");
+
+                // Create a successful auth result
+                var authResult = new AuthResult
+                {
+                    IsSuccessful = true,
+                    UserEmail = account.Email,
+                    IdToken = account.IdToken,
+                    ServerAuthCode = account.ServerAuthCode
+                };
+
+                // Complete the task
+                _authTcs.TrySetResult(authResult);
+            }
+            else
+            {
+                string errorMessage = account == null
+                    ? "Account information could not be retrieved"
+                    : "Sign-in was not successful";
+
+                Debug.WriteLine($"Google Sign-In error: {errorMessage}");
+
+                // Handle failure
+                var result = new AuthResult
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = errorMessage
+                };
+
+                _authTcs.TrySetResult(result);
+            }
         }
-    }
 #endif
 
         /// <summary>

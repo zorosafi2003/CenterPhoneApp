@@ -10,7 +10,7 @@ public partial class App : Application
         InitializeComponent();
 
         // Start with splash screen to handle proper initialization
-MainPage = loginPage;   
+        MainPage = loginPage;
     }
 
     protected override void OnStart()

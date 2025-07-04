@@ -12,35 +12,41 @@ public partial class LoginPage : ContentPage
     private readonly IGoogleAuthService _authService;
     private readonly IAuthenticationService _authenticationService;
     private bool _isAuthenticating = false;
+    private static bool _hasInitialized = false;
+
 
     public LoginPage(IGoogleAuthService authService, IAuthenticationService authenticationService)
     {
         InitializeComponent();
-        // Navigate based on authentication state after 3 seconds
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
-
-        Dispatcher.DispatchAsync(async () =>
-        {
-            try
-            {
-                await Task.Delay(3000); // 3 seconds splash
-                await InitializeShellAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error during splash initialization: {ex.Message}");
-                await InitializeShellFallbackAsync();
-            }
-        });
         Debug.WriteLine("LoginPage initialized with IGoogleAuthService and IAuthenticationService");
+        // Run splash logic only once
+        if (!_hasInitialized)
+        {
+            _hasInitialized = true;
+
+            Dispatcher.DispatchAsync(async () =>
+            {
+                try
+                {
+                    await Task.Delay(3000); // splash delay
+                    await InitializeShellAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error during splash initialization: {ex.Message}");
+                    await InitializeShellFallbackAsync();
+                }
+            });
+        }
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         Debug.WriteLine("LoginPage.OnAppearing called");
-        
+
         try
         {
             // Check if user is already authenticated
@@ -73,12 +79,12 @@ public partial class LoginPage : ContentPage
     private async void OnGoogleLoginClicked(object sender, EventArgs e)
     {
         // Prevent multiple clicks during authentication
-        if (_isAuthenticating) 
+        if (_isAuthenticating)
         {
             Debug.WriteLine("Authentication already in progress, ignoring click");
             return;
         }
-        
+
         try
         {
             // Check connectivity first
@@ -89,29 +95,29 @@ public partial class LoginPage : ContentPage
                 await DisplayAlert("Network Error", "No internet connection. Please check your network settings and try again.", "OK");
                 return;
             }
-            
+
             _isAuthenticating = true;
-            
+
             // Disable the button to prevent multiple clicks
             GoogleLoginButton.IsEnabled = false;
             GoogleLoginButton.Text = "Signing in...";
             IsBusy = true;
-            
+
             Debug.WriteLine("Starting Google authentication");
-            
+
             // Use the GoogleAuthService to authenticate with Google
             var authResult = await _authService.SignInWithGoogleAsync();
-            
+
             Debug.WriteLine($"Authentication result: Success={authResult?.IsSuccessful ?? false}, Email={authResult?.UserEmail ?? "null"}");
-            
+
             if (authResult?.IsSuccessful == true && !string.IsNullOrEmpty(authResult.UserEmail))
             {
                 // Login to our authentication service
                 var loginSuccess = await _authenticationService.LoginAsync(
-                    authResult.UserEmail, 
-                    authResult.IdToken 
+                    authResult.UserEmail,
+                    authResult.IdToken
                 );
-                
+
                 if (loginSuccess)
                 {
                     Debug.WriteLine("Login successful, navigating to MainPage");
@@ -127,20 +133,20 @@ public partial class LoginPage : ContentPage
             {
                 var errorMessage = authResult?.ErrorMessage ?? "Unknown error occurred";
                 Debug.WriteLine($"Authentication failed: {errorMessage}");
-                
+
                 // Handle network errors specifically with a friendlier message
-                if (!string.IsNullOrEmpty(errorMessage) && 
-                    (errorMessage.Contains("Network error", StringComparison.OrdinalIgnoreCase) || 
+                if (!string.IsNullOrEmpty(errorMessage) &&
+                    (errorMessage.Contains("Network error", StringComparison.OrdinalIgnoreCase) ||
                      errorMessage.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
                      errorMessage.Contains("internet", StringComparison.OrdinalIgnoreCase)))
                 {
-                    await DisplayAlert("Connection Error", 
-                        "Unable to connect to Google servers. Please check your internet connection and try again.", 
+                    await DisplayAlert("Connection Error",
+                        "Unable to connect to Google servers. Please check your internet connection and try again.",
                         "OK");
                 }
                 // Handle the cancellation case specifically
                 else if (!string.IsNullOrEmpty(errorMessage) &&
-                    (errorMessage.Contains("cancelled", StringComparison.OrdinalIgnoreCase) || 
+                    (errorMessage.Contains("cancelled", StringComparison.OrdinalIgnoreCase) ||
                      errorMessage.Contains("canceled", StringComparison.OrdinalIgnoreCase) ||
                      errorMessage.Contains("Result.Canceled", StringComparison.OrdinalIgnoreCase)))
                 {
@@ -236,8 +242,7 @@ public partial class LoginPage : ContentPage
             var studentService = new Services.StudentService(databaseService, apiService, studentLogger);
             var centerService = new Services.CenterService(databaseService, apiService, centerLogger);
 
-            var appShellViewModel = new ViewModels.AppShellViewModel(databaseService, authService, studentService,
-                centerService , apiService);
+            var appShellViewModel = new ViewModels.AppShellViewModel(databaseService, authService, studentService, centerService);
             var appShell = new AppShell(appShellViewModel);
 
             Application.Current.MainPage = appShell;
