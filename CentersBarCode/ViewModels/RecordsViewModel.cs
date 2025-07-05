@@ -50,7 +50,7 @@ public partial class RecordsViewModel : BaseViewModel
                     Id = record.Id,
                     Code = record.Code,
                     Name = ExtractNameFromCode(record.Code), // Extract name from the QR code if available
-                    Date = record.CreatedDateUtc.ToString("dd/MM/yyyy HH:mm"),
+                    Date = record.CreatedDateUtc.ToString("dd/MM HH:mm"),
                     CenterId = record.CenterId
                 };
 

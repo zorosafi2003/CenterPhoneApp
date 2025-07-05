@@ -172,9 +172,9 @@ public partial class QrScanner : ContentPage
             // Configure barcode reader options based on ViewModel
             cameraView.Options = new BarcodeReaderOptions
             {
-                Formats = _mainViewModel != null ? BarcodeFormats.OneDimensional : BarcodeFormat.QrCode,
+                Formats = _mainViewModel != null ? BarcodeFormats.OneDimensional : BarcodeFormat.Ean13,
                 AutoRotate = true,
-                TryHarder = true,
+                TryHarder = false,
                 Multiple = false,
             };
 
@@ -207,7 +207,7 @@ public partial class QrScanner : ContentPage
         }
     }
 
-    private void CameraView_BarCodeDetected(object sender, BarcodeDetectionEventArgs e)
+    private void CameraView_BarCodeDetected(object sender, ZXing.Net.Maui.BarcodeDetectionEventArgs e)
     {
         if ((_mainViewModel != null && !_mainViewModel.IsQrScannerVisible) ||
             (_attachCardViewModel != null && !_attachCardViewModel.IsQrScannerVisible))
@@ -216,7 +216,7 @@ public partial class QrScanner : ContentPage
             return;
         }
 
-        MainThread.BeginInvokeOnMainThread(async () =>
+        Dispatcher.Dispatch(async() =>
         {
             try
             {
@@ -246,6 +246,7 @@ public partial class QrScanner : ContentPage
                         if (_attachCardViewModel != null)
                         {
                             await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText);
+                            _attachCardViewModel.IsQrScannerVisible = false;
                         }
 
                         try
