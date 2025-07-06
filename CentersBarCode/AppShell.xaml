@@ -225,33 +225,33 @@
 
                             <!--  Import Centers Button  -->
                             <Button
-                                BackgroundColor="#6F42C1"
-                                BorderColor="#5A2D91"
-                                BorderWidth="1"
-                                Command="{Binding ImportCentersCommand}"
-                                CornerRadius="12"
-                                FontAttributes="Bold"
-                                FontSize="16"
-                                HeightRequest="50"
-                                ImageSource="import_icon.png"
-                                IsEnabled="{Binding IsImportingCenters, Converter={x:Static converters:InverseBoolConverter.Instance}}"
-                                Text="Import Data"
-                                TextColor="White" />
+                              BackgroundColor="#6F42C1"
+                              BorderColor="#5A2D91"
+                              BorderWidth="1"
+                              Command="{Binding AutoImportDataCommand}"
+                              CornerRadius="12"
+                              FontAttributes="Bold"
+                              FontSize="16"
+                              HeightRequest="50"
+                              ImageSource="import_icon.png"
+                              IsEnabled="{Binding IsAutoImporting, Converter={x:Static converters:InverseBoolConverter.Instance}}"
+                              Text="Import Data"
+                              TextColor="White" />
 
-                            <!--  Import Students Button  -->
+                                                    <!--  Import Students Button  -->
                             <Button
-                                BackgroundColor="#28A745"
-                                BorderColor="#1E7E34"
-                                BorderWidth="1"
-                                Command="{Binding ImportStudentsCommand}"
-                                CornerRadius="12"
-                                FontAttributes="Bold"
-                                FontSize="16"
-                                HeightRequest="50"
-                                ImageSource="export_icon.png"
-                                IsEnabled="{Binding IsImportingStudents, Converter={x:Static converters:InverseBoolConverter.Instance}}"
-                                Text="Export Data"
-                                TextColor="White" />
+                              BackgroundColor="#28A745"
+                              BorderColor="#1E7E34"
+                              BorderWidth="1"
+                              Command="{Binding AutoExportDataCommand}"
+                              CornerRadius="12"
+                              FontAttributes="Bold"
+                              FontSize="16"
+                              HeightRequest="50"
+                              ImageSource="export_icon.png"
+                              IsEnabled="{Binding IsAutoExporting, Converter={x:Static converters:InverseBoolConverter.Instance}}"
+                              Text="Export Data"
+                              TextColor="White" />          
 
 
 
@@ -266,38 +266,38 @@
                         VerticalOptions="Center">
                         <!--  Centers Import Status  -->
                         <StackLayout
-                            Padding="12,4"
-                            IsVisible="{Binding IsImportingCenters}"
-                            Orientation="Horizontal"
-                            Spacing="8">
-                            <ActivityIndicator
-                                HeightRequest="20"
-                                IsRunning="{Binding IsImportingCenters}"
-                                WidthRequest="20"
-                                Color="#6F42C1" />
-                            <Label
-                                FontSize="14"
-                                Text="Importing centers..."
-                                TextColor="#6C757D"
-                                VerticalOptions="Center" />
-                        </StackLayout>
+                           Padding="12,4"
+                           IsVisible="{Binding IsAutoImporting}"
+                           Orientation="Horizontal"
+                           Spacing="8">
+                                                <ActivityIndicator
+                               HeightRequest="20"
+                               IsRunning="{Binding IsAutoImporting}"
+                               WidthRequest="20"
+                               Color="#6F42C1" />
+                                                <Label
+                               FontSize="14"
+                               Text="Importing data..."
+                               TextColor="#6C757D"
+                               VerticalOptions="Center" />
+                         </StackLayout>
 
-                        <!--  Students Import Status  -->
+                                            <!--  Students Import Status  -->
                         <StackLayout
-                            Padding="12,4"
-                            IsVisible="{Binding IsImportingStudents}"
-                            Orientation="Horizontal"
-                            Spacing="8">
-                            <ActivityIndicator
-                                HeightRequest="20"
-                                IsRunning="{Binding IsImportingStudents}"
-                                WidthRequest="20"
-                                Color="#28A745" />
-                            <Label
-                                FontSize="14"
-                                Text="Importing students..."
-                                TextColor="#6C757D"
-                                VerticalOptions="Center" />
+                           Padding="12,4"
+                           IsVisible="{Binding IsAutoExporting}"
+                           Orientation="Horizontal"
+                           Spacing="8">
+                                                <ActivityIndicator
+                               HeightRequest="20"
+                               IsRunning="{Binding IsAutoExporting}"
+                               WidthRequest="20"
+                               Color="#28A745" />
+                                            <Label
+                               FontSize="14"
+                               Text="Exporting data..."
+                               TextColor="#6C757D"
+                               VerticalOptions="Center" />          
                         </StackLayout>
                     </StackLayout>
                 </StackLayout>

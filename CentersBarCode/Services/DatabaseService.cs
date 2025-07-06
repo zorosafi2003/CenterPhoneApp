@@ -14,7 +14,7 @@ public interface IDatabaseService
     Task SaveStudentsAsync(List<Student> students);
     Task<List<Student>> GetAllStudentsAsync();
     Task<Student?> GetStudentByCodeAsync(string studentCode);
-    Task<Student?> GetStudentByIdAsync(string studentId);
+    Task<Student?> GetStudentByIdAsync(Guid studentId);
     Task<Student?> GetStudentByPhoneAsync(string phone);
     Task ClearAllStudentsAsync();
     Task<int> DeleteStudentAsync(Student student);
@@ -177,7 +177,7 @@ public class DatabaseService : IDatabaseService
         }
     }
 
-    public async Task<Student?> GetStudentByIdAsync(string studentId)
+    public async Task<Student?> GetStudentByIdAsync(Guid studentId)
     {
         try
         {

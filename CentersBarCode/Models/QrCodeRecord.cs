@@ -43,5 +43,5 @@ public class DataChildOfCreateStudentAttendanceRequest
     public string StudentCode { get; set; }
     public Guid CenterId { get; set; }
     public Guid LocalId { get; set; }
-    public DateTime CreateDate { get; set; }
+    public DateTime CreatedDate { get; set; }
 }

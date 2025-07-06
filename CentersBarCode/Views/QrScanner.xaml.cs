@@ -207,7 +207,7 @@ public partial class QrScanner : ContentPage
         }
     }
 
-    private void CameraView_BarCodeDetected(object sender, ZXing.Net.Maui.BarcodeDetectionEventArgs e)
+    private  void CameraView_BarCodeDetected(object sender, ZXing.Net.Maui.BarcodeDetectionEventArgs e)
     {
         if ((_mainViewModel != null && !_mainViewModel.IsQrScannerVisible) ||
             (_attachCardViewModel != null && !_attachCardViewModel.IsQrScannerVisible))
@@ -245,7 +245,7 @@ public partial class QrScanner : ContentPage
                         }
                         if (_attachCardViewModel != null)
                         {
-                            await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText);
+                           await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText, _attachCardViewModel.StudentId.Value);
                             _attachCardViewModel.IsQrScannerVisible = false;
                         }
 

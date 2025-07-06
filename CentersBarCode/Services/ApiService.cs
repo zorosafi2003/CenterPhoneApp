@@ -12,7 +12,7 @@ public interface IApiService
     Task<Result<ValidateAuthenticationResponse>> ValidateAuthenticationAsync(string email, string token);
     Task<List<StudentApiResponse>> GetStudentsAsync(string bearerToken);
     Task<List<CenterApiResponse>> GetCentersAsync(string bearerToken);
-    Task<Result> ExportStudentAttendanceAsync(string bearerToken , CreateStudentAttendanceRequest model );
+    Task<Result<ExportStudentAttendanceResponse>> ExportStudentAttendanceAsync(string bearerToken , CreateStudentAttendanceRequest model );
     Task<StudentApiResponse> GetStudentByPhoneAsync(string bearerToken, string phone);
     Task<StudentApiResponse> AttachStudentWithCodeAsync(string bearerToken, Guid studentId, string code);
     Task<ApiConfiguration> LoadApiConfigurationAsync();
@@ -264,7 +264,7 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<Result> ExportStudentAttendanceAsync(string bearerToken, CreateStudentAttendanceRequest model)
+    public async Task<Result<ExportStudentAttendanceResponse>> ExportStudentAttendanceAsync(string bearerToken, CreateStudentAttendanceRequest model)
     {
         try
         {
@@ -291,12 +291,12 @@ public class ApiService : IApiService
                 var responseContent = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("Export Student Attendance API response received successfully");
 
-                var result = JsonSerializer.Deserialize<Result>(responseContent, new JsonSerializerOptions
+                var result = JsonSerializer.Deserialize<Result<ExportStudentAttendanceResponse>>(responseContent, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                return result ?? new Result { IsSuccess = true };
+                return result ;
             }
             else
             {
@@ -304,7 +304,7 @@ public class ApiService : IApiService
                 _logger.LogError("Export Student Attendance API call failed with status: {StatusCode}, Content: {ErrorContent}",
                     response.StatusCode, errorContent);
 
-                return new Result
+                return new Result<ExportStudentAttendanceResponse>
                 {
                     IsSuccess = false,
                     Error = new Error
@@ -318,7 +318,7 @@ public class ApiService : IApiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while exporting student attendance");
-            return new Result
+            return new Result<ExportStudentAttendanceResponse>
             {
                 IsSuccess = false,
                 Error = new Error
@@ -362,13 +362,14 @@ public class ApiService : IApiService
                 {
                     PropertyNameCaseInsensitive = true
                 });
+
                 if (studentsResult.IsSuccess)
                 {
-                    return studentsResult.Value ?? new StudentApiResponse();
+                    return studentsResult.Value;
                 }
                 else
                 {
-                    throw new Exception(studentsResult.Error?.Description ?? "Unknown error");
+                    return null;
                 }
             }
             else
@@ -418,7 +419,7 @@ public class ApiService : IApiService
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var response = await _httpClient.PostAsync(requestUri, content);
+            var response = await _httpClient.PutAsync(requestUri, content);
 
             if (response.IsSuccessStatusCode)
             {

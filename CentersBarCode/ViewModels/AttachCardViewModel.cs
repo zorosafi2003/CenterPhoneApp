@@ -6,6 +6,9 @@ public partial class AttachCardViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
     private readonly IAuthenticationService _authenticationService;
+    private readonly IApiService _apiService;
+
+
     public event Action SearchCommandExecuted;
     public event Action CloseQrScannerCommandExecuted;
 
@@ -16,6 +19,9 @@ public partial class AttachCardViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _studentName = string.Empty;
+
+    [ObservableProperty]
+    private Guid? _studentId = null;
 
     [ObservableProperty]
     private string _teacherName = string.Empty;
@@ -35,10 +41,12 @@ public partial class AttachCardViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isProcessing;
 
-    public AttachCardViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService)
+    public AttachCardViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService, IApiService apiService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
+        _apiService = apiService;
+
         PhoneNumber = string.Empty;
         IsSearchEnabled = false;
         IsQrScannerVisible = false;
@@ -46,7 +54,8 @@ public partial class AttachCardViewModel : BaseViewModel
         ScannedQrText = string.Empty;
         IsProcessing = false;
 
-        StudentName = _authenticationService.FullName ?? string.Empty;
+        StudentName = string.Empty;
+        StudentId = null;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
         Title = "Attach Card";
 
@@ -60,11 +69,14 @@ public partial class AttachCardViewModel : BaseViewModel
         {
             // Store the current phone number before opening scanner
             _currentPhoneNumber = PhoneNumber;
+            _studentName = StudentName;
+            _studentId = StudentId;
+
             IsQrScannerVisible = true;
             IsCameraInitialized = true;
             System.Diagnostics.Debug.WriteLine($"Opening QR scanner for phone: {_currentPhoneNumber}");
             SearchCommandExecuted?.Invoke();
-            
+
         }
     }
 
@@ -78,7 +90,7 @@ public partial class AttachCardViewModel : BaseViewModel
     }
 
     // Process scanned QR code
-    public async Task ProcessScannedQrCodeAsync(string qrText)
+    public async Task ProcessScannedQrCodeAsync(string qrText, Guid studentId)
     {
         try
         {
@@ -89,27 +101,24 @@ public partial class AttachCardViewModel : BaseViewModel
             IsQrScannerVisible = false;
             IsCameraInitialized = false;
 
-            // Create a record with the phone number and QR code
-            var qrRecord = new QrCodeRecord(
-                centerId: Guid.NewGuid(), // You might want to use a specific center ID for card attachments
-                code: $"CARD_ATTACH|{_currentPhoneNumber}|{qrText}"
-            );
+            var attachStudentWithCodeResult = await _apiService.AttachStudentWithCodeAsync(_authenticationService.BearerToken, studentId, qrText);
 
-            // Save to database
-            await _databaseService.SaveQrCodeRecordAsync(qrRecord);
-
-            // Refresh the records badge
-            await RefreshRecordsBadgeAsync();
-
-            // Clear the phone number input after successful attachment
-            PhoneNumber = string.Empty;
-            _currentPhoneNumber = string.Empty;
-
-            // Show success notification
-            if (Application.Current?.MainPage != null)
+            if (attachStudentWithCodeResult != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Success",
-                    "Card successfully attached!", "OK");
+                // Clear the phone number input after successful attachment
+                PhoneNumber = string.Empty;
+                _currentPhoneNumber = string.Empty;
+
+                // Show success notification
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Success",
+                        $"Card {attachStudentWithCodeResult.Code} successfully attached with {attachStudentWithCodeResult.FullName}", "OK");
+                }
+            }
+            else
+            {
+                throw new Exception("Failed to attach student with QR code.");
             }
 
             System.Diagnostics.Debug.WriteLine($"Card attached: Phone={_currentPhoneNumber}, QR={qrText}");
@@ -135,13 +144,44 @@ public partial class AttachCardViewModel : BaseViewModel
         ValidatePhoneNumber();
     }
 
-    private void ValidatePhoneNumber()
+    private async void ValidatePhoneNumber()
     {
         // Check if phone number has exactly 11 digits
         var digitsOnly = Regex.Replace(PhoneNumber ?? string.Empty, @"\D", "");
-        IsSearchEnabled = digitsOnly.Length == 11;
+        if (digitsOnly.Length == 11)
+        {
+            var student = await _databaseService.GetStudentByPhoneAsync(digitsOnly);
 
-        System.Diagnostics.Debug.WriteLine($"Phone validation: {digitsOnly} - Length: {digitsOnly.Length} - Enabled: {IsSearchEnabled}");
+            if (student != null)
+            {
+                IsSearchEnabled = true;
+                StudentName = student.StudentName;
+                StudentId = student.StudentId;
+            }
+            else
+            {
+                var studentFromApi = await _apiService.GetStudentByPhoneAsync(_authenticationService.BearerToken, digitsOnly);
+                if (studentFromApi != null)
+                {
+                    IsSearchEnabled = true;
+                    StudentName = studentFromApi.FullName;
+                    StudentId = studentFromApi.Id;
+                }
+                else
+                {
+                    IsSearchEnabled = false;
+                    StudentName = string.Empty;
+                    StudentId = null;
+                    await Application.Current.MainPage.DisplayAlert("Result", "this number is not exist.", "OK");
+                }
+            }
+        }
+        else
+        {
+            IsSearchEnabled = false;
+            StudentName = string.Empty;
+            StudentId = null;
+        }
     }
 
     private async Task RefreshRecordsBadgeAsync()

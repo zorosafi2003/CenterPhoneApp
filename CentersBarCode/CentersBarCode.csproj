@@ -14,7 +14,7 @@
 		<MauiVersion>8.0.90-nightly.*</MauiVersion>
 
 		<!-- Display name -->
-		<ApplicationTitle>CentersBarCode</ApplicationTitle>
+		<ApplicationTitle>Centers BarCode</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.teacherseg.CentersBarCode</ApplicationId>
@@ -108,6 +108,7 @@
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
 	  <AndroidKeyStore>False</AndroidKeyStore>
 	  <AndroidSigningKeyAlias></AndroidSigningKeyAlias>
+	  <EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
 	  <AndroidKeyStore>False</AndroidKeyStore>

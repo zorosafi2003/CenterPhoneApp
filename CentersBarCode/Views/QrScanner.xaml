@@ -99,6 +99,13 @@
                     Text="{Binding PhoneNumber}"
                     TextColor="#FFFFFF" />
                 <Label
+                     BackgroundColor="Transparent"
+                     FontSize="24"
+                     HorizontalTextAlignment="Center"
+                     IsVisible="{Binding StudentName}"
+                     Text="{Binding StudentName}"
+                     TextColor="#FFFFFF" />     
+                <Label
                     BackgroundColor="Transparent"
                     FontSize="24"
                     HorizontalTextAlignment="Center"

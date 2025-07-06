@@ -115,6 +115,7 @@
                                         VerticalOptions="Center"
                                         WidthRequest="30" />
                                 </Grid>
+                                
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>

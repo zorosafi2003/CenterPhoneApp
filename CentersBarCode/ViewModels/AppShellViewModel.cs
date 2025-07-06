@@ -7,6 +7,7 @@ public partial class AppShellViewModel : BaseViewModel
     private readonly IStudentService _studentService;
     private readonly ICenterService _centerService;
     private readonly IGoogleAuthService _googleAuthService; // Added
+    private readonly IApiService _apiService;
 
     [ObservableProperty]
     private int _recordsCount;
@@ -36,7 +37,7 @@ public partial class AppShellViewModel : BaseViewModel
     private bool _hasStudentsBadge;
 
     [ObservableProperty]
-    private bool _isImportingStudents;
+    private bool _isAutoExporting;
 
     [ObservableProperty]
     private int _centersCount;
@@ -45,19 +46,19 @@ public partial class AppShellViewModel : BaseViewModel
     private bool _hasCentersBadge;
 
     [ObservableProperty]
-    private bool _isImportingCenters;
+    private bool _isAutoImporting;
 
     public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
-        IStudentService studentService, ICenterService centerService, IGoogleAuthService googleAuthService)
+        IStudentService studentService, ICenterService centerService, IGoogleAuthService googleAuthService , IApiService apiService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
         _studentService = studentService;
         _centerService = centerService;
         _googleAuthService = googleAuthService; // Added
+        _apiService = apiService;
 
-
-        RecordsCount = 0;
+       RecordsCount = 0;
         HasBadge = false;
         StudentsCount = 0;
         HasStudentsBadge = false;
@@ -168,84 +169,10 @@ public partial class AppShellViewModel : BaseViewModel
         }
     }
 
-    private async Task AutoImportDataAsync()
-    {
-        try
-        {
-            if (!string.IsNullOrEmpty(_authenticationService.BearerToken))
-            {
-                System.Diagnostics.Debug.WriteLine("Auto-importing centers and students after successful login");
-
-                // Import centers first, then students
-                await ImportCentersAsync();
-                await ImportStudentsAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error during auto-import: {ex.Message}");
-        }
-    }
-
-    // Command to refresh the badge manually
-    [RelayCommand]
-    public async Task RefreshBadgeAsync()
-    {
-        await UpdateRecordsCountAsync();
-        await UpdateStudentsCountAsync();
-        await UpdateCentersCountAsync();
-    }
-
-    // Command to navigate to main page
-    [RelayCommand]
-    private async Task NavigateToMainAsync()
-    {
-        try
-        {
-            System.Diagnostics.Debug.WriteLine("NavigateToMainAsync command called");
-            await Shell.Current.GoToAsync("//MainPage");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in NavigateToMainAsync: {ex.Message}");
-        }
-    }
-
-    // Command to navigate to attach card page
-    [RelayCommand]
-    private async Task NavigateToAttachCardAsync()
-    {
-        try
-        {
-            System.Diagnostics.Debug.WriteLine("NavigateToAttachCardAsync command called");
-            await Shell.Current.GoToAsync("//AttachCardPage");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in NavigateToAttachCardAsync: {ex.Message}");
-        }
-    }
-
-    // Command to navigate to records page
-    [RelayCommand]
-    private async Task NavigateToRecordsAsync()
-    {
-        try
-        {
-            System.Diagnostics.Debug.WriteLine("NavigateToRecordsAsync command called");
-            await Shell.Current.GoToAsync("//RecordsPage");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in NavigateToRecordsAsync: {ex.Message}");
-        }
-    }
-
-    // Command to import students
-    [RelayCommand]
+    // Command to import students  
     private async Task ImportStudentsAsync()
     {
-        if (IsImportingStudents)
+        if (IsAutoImporting)
         {
             System.Diagnostics.Debug.WriteLine("Student import already in progress, ignoring request");
             return;
@@ -253,7 +180,7 @@ public partial class AppShellViewModel : BaseViewModel
 
         try
         {
-            IsImportingStudents = true;
+            IsAutoImporting = true;
 
             var bearerToken = _authenticationService.BearerToken;
             if (string.IsNullOrEmpty(bearerToken))
@@ -311,16 +238,15 @@ public partial class AppShellViewModel : BaseViewModel
         }
         finally
         {
-            IsImportingStudents = false;
+            IsAutoImporting = false;
             System.Diagnostics.Debug.WriteLine("Student import process completed");
         }
     }
 
-    // Command to import centers
-    [RelayCommand]
+    // Command to import centers   
     private async Task ImportCentersAsync()
     {
-        if (IsImportingCenters)
+        if (IsAutoImporting)
         {
             System.Diagnostics.Debug.WriteLine("Centers import already in progress, ignoring request");
             return;
@@ -328,7 +254,7 @@ public partial class AppShellViewModel : BaseViewModel
 
         try
         {
-            IsImportingCenters = true;
+            IsAutoImporting = true;
 
             var bearerToken = _authenticationService.BearerToken;
             if (string.IsNullOrEmpty(bearerToken))
@@ -386,8 +312,168 @@ public partial class AppShellViewModel : BaseViewModel
         }
         finally
         {
-            IsImportingCenters = false;
+            IsAutoImporting = false;
             System.Diagnostics.Debug.WriteLine("Centers import process completed");
+        }
+    }
+
+
+
+    [RelayCommand]
+    private async Task AutoImportDataAsync()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(_authenticationService.BearerToken))
+            {
+                System.Diagnostics.Debug.WriteLine("Auto-importing centers and students after successful login");
+
+                // Import centers first, then students
+                await ImportCentersAsync();
+                await ImportStudentsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during auto-import: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task AutoExportDataAsync()
+    {
+       
+        if (IsAutoExporting)
+        {
+            System.Diagnostics.Debug.WriteLine("Centers import already in progress, ignoring request");
+            return;
+        }
+
+        try
+        {
+           
+
+            var bearerToken = _authenticationService.BearerToken;
+            if (string.IsNullOrEmpty(bearerToken))
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Error",
+                        "You must be logged in to import centers.", "OK");
+                }
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine("Starting centers import process");
+            var list = await _databaseService.GetQrCodeRecordsAsync();
+            if (list.Count > 0)
+            {
+                IsAutoExporting = true;
+
+                var sendedItems = list.Take(100).ToList();
+
+                var model = new CreateStudentAttendanceRequest
+                {
+                    Data = sendedItems.Select(record => new DataChildOfCreateStudentAttendanceRequest
+                    {
+                        CenterId = record.CenterId,
+                        LocalId = record.Id,
+                        StudentCode = record.Code,
+                        StudentId = record.StudentId,
+                        CreatedDate = record.CreatedDateUtc
+                    }).ToList()
+                };
+
+                var success = await _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken, model);
+
+                if (success.IsSuccess)
+                {
+                    sendedItems = sendedItems.Where(x=> success.Value.InsertedLocalIdArr.Contains( x.Id)).ToList();
+
+                    await _databaseService.DeleteQrCodeRecordsAsync(sendedItems);
+                    await UpdateRecordsCountAsync();  
+                }
+                else
+                {
+                    if (Application.Current?.MainPage != null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Warning",
+                            "No centers were imported. Please check your connection and try again.", "OK");
+                    }
+                }
+
+                IsAutoExporting = false;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during centers import: {ex.Message}");
+
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error",
+                    $"Failed to import centers: {ex.Message}", "OK");
+            }
+        }
+        finally
+        {
+            IsAutoExporting = false;
+            System.Diagnostics.Debug.WriteLine("Centers import process completed");
+        }
+    }
+
+    // Command to refresh the badge manually
+    [RelayCommand]
+    public async Task RefreshBadgeAsync()
+    {
+        await UpdateRecordsCountAsync();
+        await UpdateStudentsCountAsync();
+        await UpdateCentersCountAsync();
+    }
+
+    // Command to navigate to main page
+    [RelayCommand]
+    private async Task NavigateToMainAsync()
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("NavigateToMainAsync command called");
+            await Shell.Current.GoToAsync("//MainPage");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in NavigateToMainAsync: {ex.Message}");
+        }
+    }
+
+    // Command to navigate to attach card page
+    [RelayCommand]
+    private async Task NavigateToAttachCardAsync()
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("NavigateToAttachCardAsync command called");
+            await Shell.Current.GoToAsync("//AttachCardPage");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in NavigateToAttachCardAsync: {ex.Message}");
+        }
+    }
+
+    // Command to navigate to records page
+    [RelayCommand]
+    private async Task NavigateToRecordsAsync()
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("NavigateToRecordsAsync command called");
+            await Shell.Current.GoToAsync("//RecordsPage");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in NavigateToRecordsAsync: {ex.Message}");
         }
     }
 

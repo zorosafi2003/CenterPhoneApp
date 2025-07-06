@@ -2,13 +2,13 @@ using SQLite;
 
 namespace CentersBarCode.Models;
 
-[Table("Students")]
+[Table("StudentsTbl")]
 public class Student
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
-    
-    public string StudentId { get; set; } = string.Empty;
+
+    public Guid StudentId { get; set; }
     
     public string StudentCode { get; set; } = string.Empty;
     
@@ -33,7 +33,7 @@ public class Student
 // DTO for API response
 public class StudentApiResponse
 {
-    public string Id { get; set; } = string.Empty;
+    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string GroupName { get; set; } = string.Empty;
@@ -85,4 +85,9 @@ public class ValidateAuthenticationResponse
     public string FullName { get; set; } = string.Empty;
     public string Token { get; set; } = string.Empty;
     public string TeacherName { get; set; } = string.Empty;
+}
+
+public class ExportStudentAttendanceResponse
+{
+    public List<Guid> InsertedLocalIdArr { get; set; } = new();
 }
