@@ -461,6 +461,21 @@ public partial class AppShellViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Error in NavigateToAttachCardAsync: {ex.Message}");
         }
     }
+    
+    // Command to navigate to manual add page
+    [RelayCommand]
+    private async Task NavigateToManualAddAsync()
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("NavigateToManualAddAsync command called");
+            await Shell.Current.GoToAsync("//ManualAddPage");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in NavigateToManualAddAsync: {ex.Message}");
+        }
+    }
 
     // Command to navigate to records page
     [RelayCommand]

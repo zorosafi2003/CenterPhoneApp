@@ -86,6 +86,9 @@
 	  <MauiXaml Update="Views\AttachCardPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Views\ManualAddPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\SplashScreen.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>	

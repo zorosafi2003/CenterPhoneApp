@@ -37,6 +37,7 @@ public static class MauiProgram
         builder.Services.AddTransient<MainViewModel>();
         builder.Services.AddTransient<RecordsViewModel>();
         builder.Services.AddTransient<AttachCardViewModel>();
+        builder.Services.AddTransient<ManualAddViewModel>();
         builder.Services.AddSingleton<AppShellViewModel>();
 
         // Register GoogleAuthService as both the interface and concrete type
@@ -60,6 +61,7 @@ public static class MauiProgram
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<RecordsPage>();
         builder.Services.AddTransient<AttachCardPage>();
+        builder.Services.AddTransient<ManualAddPage>();
         builder.Services.AddSingleton<SplashScreen>();
 
         // Add essentials for secure storage

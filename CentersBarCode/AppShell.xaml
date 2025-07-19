@@ -209,6 +209,20 @@
                                 Text="📱 Attach Card"
                                 TextColor="#343A40" />
 
+                            <!--  Manual Attendance Page - NEW  -->
+                            <Button
+                                BackgroundColor="White"
+                                BorderColor="#E9ECEF"
+                                BorderWidth="1"
+                                Clicked="OnManualAddClicked"
+                                Command="{Binding NavigateToManualAddCommand}"
+                                CornerRadius="12"
+                                FontAttributes="Bold"
+                                FontSize="16"
+                                HeightRequest="50"
+                                Text="✏️ Manual Attendance"
+                                TextColor="#343A40" />
+
                             <!--  Records Page  -->
                             <Button
                                 BackgroundColor="White"
@@ -238,7 +252,7 @@
                               Text="Import Data"
                               TextColor="White" />
 
-                                                    <!--  Import Students Button  -->
+                            <!--  Import Students Button  -->
                             <Button
                               BackgroundColor="#28A745"
                               BorderColor="#1E7E34"
@@ -338,6 +352,13 @@
         IsVisible="{Binding IsAuthenticated}"
         Route="AttachCardPage">
         <ShellContent Title="Attach Card" ContentTemplate="{DataTemplate views:AttachCardPage}" />
+    </FlyoutItem>
+    
+    <FlyoutItem
+        Title="Manual Attendance"
+        IsVisible="{Binding IsAuthenticated}"
+        Route="ManualAddPage">
+        <ShellContent Title="Manual Attendance" ContentTemplate="{DataTemplate views:ManualAddPage}" />
     </FlyoutItem>
 
     <FlyoutItem

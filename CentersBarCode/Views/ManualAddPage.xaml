@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CentersBarCode.Views.ManualAddPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:CentersBarCode.Converters"
+    xmlns:models="clr-namespace:CentersBarCode.Models"
+    xmlns:vm="clr-namespace:CentersBarCode.ViewModels"
+    Title="Manual Attendance"
+    x:DataType="vm:ManualAddViewModel"
+    BackgroundColor="#F8F9FA">
+
+  <ContentPage.Resources>
+    <ResourceDictionary>
+      <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+    </ResourceDictionary>
+  </ContentPage.Resources>
+
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16" Padding="20">
+    <!-- Header Section -->
+    <Grid Grid.Row="0" RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
+      <!-- Teacher Name -->
+      <HorizontalStackLayout Grid.Row="0" HorizontalOptions="Start">
+        <Label
+            Text="Teacher: "
+            FontAttributes="Bold"
+            TextColor="#343A40" />
+        <Label
+            Text="{Binding TeacherName}"
+            TextColor="#6C757D" />
+      </HorizontalStackLayout>
+
+      <!-- Center Selection -->
+      <VerticalStackLayout Grid.Row="1" Spacing="8">
+        <Label
+            Text="Select Center:"
+            FontAttributes="Bold"
+            TextColor="#343A40" />
+        <Picker
+            ItemsSource="{Binding Centers}"
+            SelectedItem="{Binding SelectedCenter}"
+            Title="Select a center"
+            BackgroundColor="White"
+            FontSize="16"
+            HeightRequest="50">
+          <Picker.ItemDisplayBinding>
+            <Binding Path="Name" />
+          </Picker.ItemDisplayBinding>
+        </Picker>
+      </VerticalStackLayout>
+
+      <!-- Search Input -->
+      <Grid Grid.Row="2" ColumnDefinitions="*, Auto" ColumnSpacing="0">
+        <Border
+            Grid.Column="0"
+            Stroke="#DEE2E6"
+            StrokeThickness="1"
+            StrokeShape="RoundRectangle 12,12,12,12">
+          <Entry
+              Placeholder="Enter phone or code to search"
+              Text="{Binding SearchText}"
+              HeightRequest="50"
+              BackgroundColor="White"
+              Margin="10,0" />
+        </Border>
+      </Grid>
+    </Grid>
+
+    <!-- Results Section -->
+    <Grid Grid.Row="1" RowDefinitions="Auto,*">
+      <!-- Results Header -->
+      <Label
+          Grid.Row="0"
+          Text="Search Results"
+          FontAttributes="Bold"
+          FontSize="18"
+          Margin="0,16,0,8"
+          IsVisible="{Binding HasResults}"
+          TextColor="#343A40" />
+
+      <!-- Results List -->
+      <Border
+          Grid.Row="2"
+          Stroke="#DEE2E6"
+          StrokeThickness="1"
+          StrokeShape="RoundRectangle 12,12,12,12"
+          IsVisible="{Binding HasResults}">
+        <CollectionView
+            ItemsSource="{Binding SearchResults}"
+            SelectedItem="{Binding SelectedStudent}"
+            SelectionMode="Single"
+            BackgroundColor="White">
+          <CollectionView.EmptyView>
+            <StackLayout VerticalOptions="Center" HorizontalOptions="Center">
+              <Label
+                  Text="No students found"
+                  FontSize="16"
+                  TextColor="#6C757D"
+                  HorizontalTextAlignment="Center" />
+            </StackLayout>
+          </CollectionView.EmptyView>
+          <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="models:Student">
+              <Grid Padding="5,16" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="12">
+
+                <Label
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Text="{Binding StudentName}"
+                    FontAttributes="Bold"
+                    FontSize="16"
+                    TextColor="#343A40" />
+                <HorizontalStackLayout
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Spacing="8">
+                  <Label
+                      Text="Code:"
+                      FontAttributes="Bold"
+                      FontSize="14"
+                      TextColor="#6C757D" />
+                  <Label
+                      Text="{Binding StudentCode}"
+                      FontSize="14"
+                      TextColor="#6C757D" />
+                  
+                </HorizontalStackLayout>
+              </Grid>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </Border>
+
+      <!-- Loading Indicator -->
+      <ActivityIndicator
+          Grid.Row="1"
+          IsRunning="{Binding IsSearching}"
+          IsVisible="{Binding IsSearching}"
+          HorizontalOptions="Center"
+          VerticalOptions="Center"
+          Color="#007BFF" />
+    </Grid>
+
+    <!-- Bottom Section - Save Button -->
+    <Button
+        Grid.Row="2"
+        Text="Save Attendance"
+        Command="{Binding SaveAttendanceCommand}"
+        IsEnabled="{Binding CanSaveAttendance}"
+        BackgroundColor="#28A745"
+        TextColor="White"
+        FontAttributes="Bold"
+        CornerRadius="12"
+        HeightRequest="50"
+        IsVisible="{Binding HasResults}" />
+  </Grid>
+</ContentPage>

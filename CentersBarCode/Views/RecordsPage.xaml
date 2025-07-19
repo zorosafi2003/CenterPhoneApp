@@ -9,8 +9,7 @@
     x:DataType="vm:RecordsViewModel"
     Shell.BackgroundColor="Gray">
 
-    <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsLoading}">
-        <ScrollView>
+
             <Grid Padding="10" RowDefinitions="Auto,*">
                 <!--  Header  -->
                 <StackLayout Grid.Row="0" Padding="10,0">
@@ -138,6 +137,5 @@
                     VerticalOptions="CenterAndExpand"
                     Color="Blue" />
             </Grid>
-        </ScrollView>
-    </RefreshView>
+
 </ContentPage>

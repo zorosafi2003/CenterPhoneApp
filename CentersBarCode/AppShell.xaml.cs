@@ -19,12 +19,13 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("LoginPage", typeof(LoginPage));
         Routing.RegisterRoute("RecordsPage", typeof(RecordsPage));
         Routing.RegisterRoute("AttachCardPage", typeof(AttachCardPage));
+        Routing.RegisterRoute("ManualAddPage", typeof(ManualAddPage));
         
         // Subscribe to property changes to handle authentication state changes
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         
         System.Diagnostics.Debug.WriteLine($"AppShell initialized. ShowFlyoutItems: {_viewModel.ShowFlyoutItems}");
-        System.Diagnostics.Debug.WriteLine($"Registered routes: MainPage, LoginPage, RecordsPage, AttachCardPage");
+        System.Diagnostics.Debug.WriteLine($"Registered routes: MainPage, LoginPage, RecordsPage, AttachCardPage, ManualAddPage");
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -202,6 +203,20 @@ public partial class AppShell : Shell
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error in OnAttachCardClicked: {ex.Message}");
+        }
+    }
+    
+    private async void OnManualAddClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("OnManualAddClicked called");
+            await NavigateToPageSafely("//ManualAddPage");
+            FlyoutIsPresented = false; // Close the flyout
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in OnManualAddClicked: {ex.Message}");
         }
     }
 
