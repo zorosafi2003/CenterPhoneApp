@@ -67,7 +67,7 @@ public partial class AppShellViewModel : BaseViewModel
         IsAuthenticated = _authenticationService.IsAuthenticated;
         UserEmail = _authenticationService.UserEmail ?? string.Empty;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
-        StudentName = _authenticationService.FullName ?? string.Empty;
+        StudentName = string.Empty;
         ShowFlyoutItems = _authenticationService.IsAuthenticated;
         Title = "Centers Barcode App";
 
@@ -90,7 +90,7 @@ public partial class AppShellViewModel : BaseViewModel
             IsAuthenticated = isAuthenticated;
             UserEmail = _authenticationService.UserEmail ?? string.Empty;
             TeacherName = _authenticationService.TeacherName ?? string.Empty;
-            StudentName = _authenticationService.FullName ?? string.Empty;
+            StudentName =  string.Empty;
             ShowFlyoutItems = isAuthenticated;
 
             System.Diagnostics.Debug.WriteLine($"Authentication state changed: {isAuthenticated}, ShowFlyoutItems: {ShowFlyoutItems}");

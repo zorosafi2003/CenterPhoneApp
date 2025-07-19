@@ -1,6 +1,7 @@
 ﻿using CentersBarCode.Services;
 using CentersBarCode.ViewModels;
 using Microsoft.Extensions.Logging;
+using Plugin.Maui.Audio;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 
@@ -24,7 +25,8 @@ public static class MauiProgram
                 h.AddHandler(typeof(ZXing.Net.Maui.Controls.CameraBarcodeReaderView), typeof(CameraBarcodeReaderViewHandler));
                 h.AddHandler(typeof(ZXing.Net.Maui.Controls.CameraView), typeof(CameraViewHandler));
                 h.AddHandler(typeof(ZXing.Net.Maui.Controls.BarcodeGeneratorView), typeof(BarcodeGeneratorViewHandler));
-            }); ;
+            }).AddAudio();
+
         // Configure logging
         builder.Services.AddLogging(logging =>
         {

@@ -68,9 +68,11 @@
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+		<PackageReference Include="Plugin.Maui.Audio" Version="3.0.0" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 		<PackageReference Include="UraniumUI" Version="2.11.0" />
 		<PackageReference Include="Xamarin.Build.Download" Version="0.11.4" />
+		<PackageReference Include="ZXing.Net" Version="0.16.9" />
 		
 		<!-- Keep ZXing packages for additional barcode functionality -->
 		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
@@ -108,7 +110,7 @@
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
 	  <AndroidKeyStore>False</AndroidKeyStore>
 	  <AndroidSigningKeyAlias></AndroidSigningKeyAlias>
-	  <EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
+	  <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
 	  <AndroidKeyStore>False</AndroidKeyStore>

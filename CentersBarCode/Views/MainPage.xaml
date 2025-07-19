@@ -28,13 +28,31 @@
                 ItemsSource="{Binding Centers}"
                 SelectedItem="{Binding SelectedCenter}" />
 
-            <!--  Scan Button  -->
+            <!--  Scan Buttons  -->
             <Button
                 Command="{Binding OpenQrScannerCommand}"
                 HorizontalOptions="FillAndExpand"
                 Clicked="OnScanClicked"
                 IsEnabled="{Binding CanScan}"
                 Text="Scan QR Code" />
+                
+            <!--  Auto Scan Button  -->
+            <Button
+                Command="{Binding OpenAutoQrScannerCommand}"
+                Clicked="OnAutoScanClicked"
+                HorizontalOptions="FillAndExpand"
+                IsEnabled="{Binding CanScan}"
+                BackgroundColor="#1E90FF"
+                TextColor="White"
+                Text="Auto Scan Mode" />
+                
+            <!-- Auto Mode Indicator -->
+            <Label 
+                Text="Auto Scan Mode is ON - Scans will be saved automatically"
+                TextColor="#1E90FF"
+                FontSize="14"
+                HorizontalOptions="Center"
+                IsVisible="{Binding IsAutoScanMode}" />
         </VerticalStackLayout>
 
         <!--  QR Code Result Popup  -->

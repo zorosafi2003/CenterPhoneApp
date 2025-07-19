@@ -4,28 +4,61 @@ using Android.Content;
 #endif
 using CentersBarCode.ViewModels;
 using Microsoft.Maui.Platform;
+using System.ComponentModel;
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
+using Microsoft.Maui.Graphics;
+using Plugin.Maui.Audio; // For Size
 
 namespace CentersBarCode.Views;
 
-public partial class QrScanner : ContentPage
+public partial class QrScanner : ContentPage, INotifyPropertyChanged
 {
     private readonly object _viewModel; // Generic object to hold either ViewModel
     private readonly MainViewModel _mainViewModel;
     private readonly AttachCardViewModel _attachCardViewModel;
     private bool _isFlashOn = false;
+    private bool _isProcessingBarcode = false; // Flag to prevent multiple processing
+    
+    private int _scanCount = 0;
+    
+    // Public property for binding
+    public int ScanCount
+    {
+        get => _scanCount;
+        set
+        {
+            if (_scanCount != value)
+            {
+                _scanCount = value;
+                OnPropertyChanged(nameof(ScanCount));
+            }
+        }
+    }
 
-    public QrScanner(MainViewModel viewModel)
+    public QrScanner(MainViewModel viewModel )
     {
         InitializeComponent();
         _viewModel = viewModel;
         _mainViewModel = viewModel;
-        BindingContext = _mainViewModel;
+
+        // Set the binding context for the page to handle our local properties
+        this.BindingContext = this;
+        
+        // Set the rest of the controls to use the view model
+        qrScannerGrid.BindingContext = _mainViewModel;
+        
+        // Set auto scan related elements binding context explicitly
+        autoScanFrame.BindingContext = _mainViewModel;
+        lastScannedLabel.BindingContext = _mainViewModel;
 
         System.Diagnostics.Debug.WriteLine("QrScanner constructed with MainViewModel");
-
-        // Hook into CloseQrScannerCommandExecuted
+        
+        // Reset the scan counter
+        ScanCount = 0;
+        
+        // Update visibility of auto scan elements based on current mode
+        UpdateAutoScanElementsVisibility();
 
         RequestCameraPermissions();
     }
@@ -35,13 +68,31 @@ public partial class QrScanner : ContentPage
         InitializeComponent();
         _viewModel = viewModel;
         _attachCardViewModel = viewModel;
-        BindingContext = _attachCardViewModel;
+        
+        // Set grid binding context
+        qrScannerGrid.BindingContext = _attachCardViewModel;
+        
+        // Hide auto scan elements when using AttachCardViewModel
+        autoScanFrame.IsVisible = false;
+        lastScannedLabel.IsVisible = false;
 
         System.Diagnostics.Debug.WriteLine("QrScanner constructed with AttachCardViewModel");
 
-        // Hook into CloseQrScannerCommandExecuted
-
         RequestCameraPermissions();
+    }
+    
+    private void UpdateAutoScanElementsVisibility()
+    {
+        if (_mainViewModel != null)
+        {
+            bool isAutoMode = _mainViewModel.IsAutoScanMode;
+            
+            // Ensure the elements visibility matches the current mode
+            autoScanFrame.IsVisible = isAutoMode;
+            lastScannedLabel.IsVisible = isAutoMode;
+            
+            System.Diagnostics.Debug.WriteLine($"Auto scan elements visibility set to: {isAutoMode}");
+        }
     }
 
     private async void OnCloseQrScannerCommandExecuted()
@@ -65,6 +116,11 @@ public partial class QrScanner : ContentPage
     {
         base.OnAppearing();
         System.Diagnostics.Debug.WriteLine("QrScanner OnAppearing called");
+        _isProcessingBarcode = false; // Reset processing flag
+        
+        // Ensure elements visibility is correct
+        UpdateAutoScanElementsVisibility();
+        
         await CheckCameraPermissionAndInitializeAsync();
     }
 
@@ -73,12 +129,19 @@ public partial class QrScanner : ContentPage
         base.OnDisappearing();
         System.Diagnostics.Debug.WriteLine("QrScanner OnDisappearing called");
 
-        // Unsubscribe from events
+        // Update the view model's counter with our local counter
         if (_mainViewModel != null)
         {
-        }
-        if (_attachCardViewModel != null)
-        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Updating AutoScanCount to {ScanCount}");
+                // Transfer our count to the view model if needed
+                _mainViewModel.AutoScanCount = ScanCount;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating AutoScanCount: {ex.Message}");
+            }
         }
 
         // Stop and release camera
@@ -172,14 +235,15 @@ public partial class QrScanner : ContentPage
             // Configure barcode reader options based on ViewModel
             cameraView.Options = new BarcodeReaderOptions
             {
-                Formats = _mainViewModel != null ? BarcodeFormats.OneDimensional : BarcodeFormat.Ean13,
+                Formats = BarcodeFormat.Ean8,
                 AutoRotate = true,
                 TryHarder = false,
-                Multiple = false,
+                Multiple = false
             };
 
             cameraView.CameraLocation = CameraLocation.Rear;
-
+          
+          
             // Force UI refresh
             cameraView.IsEnabled = false;
             await Task.Delay(300);
@@ -207,8 +271,15 @@ public partial class QrScanner : ContentPage
         }
     }
 
-    private  void CameraView_BarCodeDetected(object sender, ZXing.Net.Maui.BarcodeDetectionEventArgs e)
+    private void CameraView_BarCodeDetected(object sender, ZXing.Net.Maui.BarcodeDetectionEventArgs e)
     {
+        // Prevent multiple processing of the same barcode
+        if (_isProcessingBarcode)
+        {
+            System.Diagnostics.Debug.WriteLine("Barcode processing already in progress, skipping");
+            return;
+        }
+
         if ((_mainViewModel != null && !_mainViewModel.IsQrScannerVisible) ||
             (_attachCardViewModel != null && !_attachCardViewModel.IsQrScannerVisible))
         {
@@ -216,13 +287,16 @@ public partial class QrScanner : ContentPage
             return;
         }
 
-        Dispatcher.Dispatch(async() =>
+        // Set processing flag
+        _isProcessingBarcode = true;
+
+        Dispatcher.Dispatch(async () =>
         {
             try
             {
                 System.Diagnostics.Debug.WriteLine($"Barcode detected: {e.Results?.Length} results");
 
-                // Stop scanning
+                // Stop scanning temporarily
                 if (cameraView != null)
                 {
                     cameraView.IsDetecting = false;
@@ -239,42 +313,129 @@ public partial class QrScanner : ContentPage
                     {
                         if (_mainViewModel != null)
                         {
-                            _mainViewModel.ProcessScannedQrCode(resultText);
-                            _mainViewModel.IsPopupVisible = true;
-                            _mainViewModel.IsQrScannerVisible = false;
+                            // Check if we're in Auto Scan mode
+                            bool isAutoScanMode = _mainViewModel.IsAutoScanMode;
+                            
+                            if (isAutoScanMode)
+                            {
+                                System.Diagnostics.Debug.WriteLine("Auto Scan Mode: Processing barcode directly");
+                                
+                                // Store the scanned code for display in the UI
+                                _mainViewModel.ScannedCode = resultText;
+                                
+                                // Play a short vibration for feedback
+                                try
+                                {
+                                    Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(500));
+                                  await  this.PlayBeepSoundAsync();
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Vibration error: {ex.Message}");
+                                }
+                                
+                                // Save the code directly to database
+                                bool saveResult = await _mainViewModel.SaveQrCodeDirectly(resultText);
+                                
+                                if (saveResult)
+                                {
+                                    // Increment our local counter
+                                    ScanCount++;
+                                    System.Diagnostics.Debug.WriteLine($"Scan count incremented to {ScanCount}");
+                                    
+                                    // Show a visual feedback briefly
+                                    await ShowScanSuccessIndicatorAsync();
+                                    
+                                    // Reset the camera for next scan
+                                    if (cameraView != null)
+                                    {
+                                        await Task.Delay(800); // Give user time to see the counter update
+                                        cameraView.IsDetecting = true;
+                                    }
+                                }
+                                else
+                                {
+                                    // Handle save failure
+                                    System.Diagnostics.Debug.WriteLine("Failed to auto-save barcode");
+                                    await DisplayAlert("Save Error", "Failed to save barcode", "OK");
+                                    
+                                    if (cameraView != null)
+                                    {
+                                        cameraView.IsDetecting = true;
+                                    }
+                                }
+                                
+                                // Reset processing flag
+                                _isProcessingBarcode = false;
+                            }
+                            else
+                            {
+                                // Regular flow - show popup
+                                //search about code in student table and add value to ScannedName to show in popup
+                                _mainViewModel.ProcessScannedQrCode(resultText);
+                                _mainViewModel.IsPopupVisible = true;
+                                _mainViewModel.IsQrScannerVisible = false;
+                                
+                                try
+                                {
+                                    Vibration.Default.Vibrate();
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Vibration error: {ex.Message}");
+                                }
+
+                                if (cameraView != null)
+                                {
+                                    cameraView.IsDetecting = false;
+                                    _mainViewModel.IsCameraInitialized = false;
+                                }
+
+                                // Navigate back to the calling page
+                                try
+                                {
+                                    await Navigation.PopAsync();
+                                    System.Diagnostics.Debug.WriteLine("Navigated back to MainPage after barcode scan");
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"Navigation error after barcode scan: {ex.Message}");
+                                    await DisplayAlert("Navigation Error", $"Failed to return to previous page: {ex.Message}", "OK");
+                                }
+                            }
                         }
-                        if (_attachCardViewModel != null)
+                        else if (_attachCardViewModel != null)
                         {
-                           await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText, _attachCardViewModel.StudentId.Value);
+                            await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText, _attachCardViewModel.StudentId.Value);
                             _attachCardViewModel.IsQrScannerVisible = false;
-                        }
+                            
+                            try
+                            {
+                                Vibration.Default.Vibrate();
 
-                        try
-                        {
-                            Vibration.Default.Vibrate();
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Vibration error: {ex.Message}");
-                        }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Vibration error: {ex.Message}");
+                            }
 
-                        if (cameraView != null)
-                        {
-                            cameraView.IsDetecting = false;
-                            if (_mainViewModel != null) _mainViewModel.IsCameraInitialized = false;
-                            if (_attachCardViewModel != null) _attachCardViewModel.IsCameraInitialized = false;
-                        }
+                            if (cameraView != null)
+                            {
+                                cameraView.IsDetecting = false;
+                                _attachCardViewModel.IsCameraInitialized = false;
+                            }
 
-                        // Navigate back to the calling page
-                        try
-                        {
-                            await Navigation.PopAsync();
-                            System.Diagnostics.Debug.WriteLine($"Navigated back to {(_mainViewModel != null ? "MainPage" : "AttachCardPage")} after barcode scan");
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Navigation error after barcode scan: {ex.Message}");
-                            await DisplayAlert("Navigation Error", $"Failed to return to previous page: {ex.Message}", "OK");
+                            // Navigate back to the calling page
+                            try
+                            {
+                                await Navigation.PopAsync();
+                                System.Diagnostics.Debug.WriteLine("Navigated back to AttachCardPage after barcode scan");
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Navigation error after barcode scan: {ex.Message}");
+                                await DisplayAlert("Navigation Error", $"Failed to return to previous page: {ex.Message}", "OK");
+                            }
                         }
                     }
                     else
@@ -284,6 +445,7 @@ public partial class QrScanner : ContentPage
                         {
                             cameraView.IsDetecting = true;
                         }
+                        _isProcessingBarcode = false;
                     }
                 }
                 else
@@ -293,6 +455,7 @@ public partial class QrScanner : ContentPage
                     {
                         cameraView.IsDetecting = true;
                     }
+                    _isProcessingBarcode = false;
                 }
             }
             catch (Exception ex)
@@ -302,8 +465,46 @@ public partial class QrScanner : ContentPage
                 {
                     cameraView.IsDetecting = true;
                 }
+                _isProcessingBarcode = false;
             }
         });
+    }
+
+    // Visual feedback for successful scan
+    private async Task ShowScanSuccessIndicatorAsync()
+    {
+        try
+        {
+            // Flash the counter or provide some visual feedback
+            // This could be done with animations, color changes, etc.
+            System.Diagnostics.Debug.WriteLine($"Scan successful - Counter: {ScanCount}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error showing scan success indicator: {ex.Message}");
+        }
+    }
+
+    private async Task PlayBeepSoundAsync()
+    {
+        try
+        {
+            // Use Microsoft.Maui.Media namespace for audio playback
+            var audioPlayer = AudioManager.Current.CreatePlayer(
+                await FileSystem.OpenAppPackageFileAsync("beep.mp3"));
+
+            // Play the sound
+            audioPlayer.Play();
+
+            await Task.Delay(1000);
+
+            System.Diagnostics.Debug.WriteLine("Beep sound played successfully");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error playing beep sound: {ex.Message}");
+            // Continue execution even if sound fails - the vibration will still work
+        }
     }
 
     private void ToggleFlash_Clicked(object sender, EventArgs e)
@@ -344,6 +545,7 @@ public partial class QrScanner : ContentPage
 
     private async void CloseQr(object sender, EventArgs e)
     {
+        _isProcessingBarcode = false; // Reset processing flag
         await Navigation.PopAsync();
     }
 }

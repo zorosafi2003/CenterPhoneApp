@@ -44,6 +44,15 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isSaving;
 
+    [ObservableProperty]
+    private bool _isAutoScanMode;
+
+    [ObservableProperty]
+    private int _autoScanCount = 0;
+
+    [ObservableProperty]
+    private bool _showAutoScanCounter;
+
     public MainViewModel(IDatabaseService databaseService, ICenterService centerService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
@@ -54,7 +63,7 @@ public partial class MainViewModel : BaseViewModel
         // Initialize empty centers list - will be populated from database
         Centers = new ObservableCollection<Center>();
 
-        StudentName = _authenticationService.FullName ?? string.Empty;
+        StudentName = string.Empty;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
         // Initialize other properties
         IsQrScannerVisible = false;
@@ -65,6 +74,9 @@ public partial class MainViewModel : BaseViewModel
         ScannedCenter = string.Empty;
         IsCameraInitialized = false;
         IsSaving = false;
+        IsAutoScanMode = false;
+        AutoScanCount = 0;
+        ShowAutoScanCounter = false;
 
         // Initialize database and load centers
         InitializeAsync();
@@ -136,6 +148,104 @@ public partial class MainViewModel : BaseViewModel
 
         // Camera initialization happens in the code-behind
         System.Diagnostics.Debug.WriteLine("QR Scanner opened");
+    }
+
+    // Command to toggle Auto Scan mode
+    [RelayCommand]
+    private void ToggleAutoScan()
+    {
+        IsAutoScanMode = !IsAutoScanMode;
+        if (IsAutoScanMode)
+        {
+            ShowAutoScanCounter = true;
+            AutoScanCount = 0;
+        }
+        else
+        {
+            ShowAutoScanCounter = false;
+        }
+        System.Diagnostics.Debug.WriteLine($"Auto Scan Mode: {IsAutoScanMode}");
+    }
+
+    // Command to open QR scanner in Auto Scan mode
+    [RelayCommand]
+    private void OpenAutoQrScanner()
+    {
+        if (SelectedCenter == null)
+        {
+            if (Application.Current?.MainPage != null)
+            {
+                Application.Current.MainPage.DisplayAlert("Error", 
+                    "Please select a center before starting Auto Scan.", "OK");
+            }
+            return;
+        }
+
+        // Set Auto Scan mode to true
+        IsAutoScanMode = true;
+        ShowAutoScanCounter = true;
+        AutoScanCount = 0;
+        
+        // Show scanner UI
+        IsQrScannerVisible = true;
+        IsCameraInitialized = true;
+
+        System.Diagnostics.Debug.WriteLine("Auto QR Scanner opened");
+    }
+
+    // Direct save QR code without showing popup (for Auto Scan mode)
+    public async Task<bool> SaveQrCodeDirectly(string code)
+    {
+        if (SelectedCenter == null || string.IsNullOrEmpty(code))
+        {
+            System.Diagnostics.Debug.WriteLine("Cannot save QR code: Center not selected or code is empty");
+            return false;
+        }
+
+        try
+        {
+            // Look up student info by code first
+            var student = await _databaseService.GetStudentByCodeAsync(code);
+            
+            // Create QR code record - need to convert center ID string to Guid
+            Guid centerGuid;
+            if (!Guid.TryParse(SelectedCenter.Id, out centerGuid))
+            {
+                // If the center ID is not a valid GUID, create a new one based on the string
+                centerGuid = Guid.NewGuid();
+                System.Diagnostics.Debug.WriteLine($"Created new GUID {centerGuid} for center ID {SelectedCenter.Id}");
+            }
+
+            var qrRecord = new QrCodeRecord(
+                centerId: centerGuid,
+                code: code
+            );
+
+            // Add student info if found
+            if (student != null)
+            {
+                qrRecord.StudentId = student.StudentId;
+                qrRecord.StudentName = student.StudentName;
+            }
+
+            // Save to database
+            await _databaseService.SaveQrCodeRecordAsync(qrRecord);
+
+            // Increment auto scan counter
+            AutoScanCount++;
+
+            // Refresh the records badge in AppShell
+            await RefreshRecordsBadgeAsync();
+
+            System.Diagnostics.Debug.WriteLine($"QR Code saved directly: CenterId={qrRecord.CenterId}, Code={code}, CreatedDateUtc={qrRecord.CreatedDateUtc}, AutoScanCount={AutoScanCount}");
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving QR code directly: {ex.Message}");
+            return false;
+        }
     }
 
     // Command to save the scanned QR code
@@ -217,6 +327,8 @@ public partial class MainViewModel : BaseViewModel
     {
         IsQrScannerVisible = false;
         IsCameraInitialized = false;
+        IsAutoScanMode = false;
+        ShowAutoScanCounter = false;
         System.Diagnostics.Debug.WriteLine("QR Scanner closed");
     }
 
@@ -233,6 +345,16 @@ public partial class MainViewModel : BaseViewModel
     partial void OnIsCameraInitializedChanged(bool value)
     {
         System.Diagnostics.Debug.WriteLine($"Camera initialized: {value}");
+    }
+
+    // Handle auto scan mode changes
+    partial void OnIsAutoScanModeChanged(bool value)
+    {
+        ShowAutoScanCounter = value;
+        if (value)
+        {
+            AutoScanCount = 0;
+        }
     }
 
     // Helper method to parse scanned QR text into components
