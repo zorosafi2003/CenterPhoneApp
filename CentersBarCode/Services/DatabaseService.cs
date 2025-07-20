@@ -9,6 +9,7 @@ public interface IDatabaseService
     Task<int> SaveQrCodeRecordAsync(QrCodeRecord record);
     Task<List<QrCodeRecord>> GetQrCodeRecordsAsync();
     Task DeleteQrCodeRecordsAsync(List<QrCodeRecord> records);
+    Task<int> DeleteQrCodeRecordAsync(QrCodeRecord record);
 
     // Student operations
     Task SaveStudentsAsync(List<Student> students);
@@ -100,6 +101,20 @@ public class DatabaseService : IDatabaseService
             {
                 await database.DeleteAsync(item);
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting QR code records: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<int> DeleteQrCodeRecordAsync(QrCodeRecord record)
+    {
+        try
+        {
+            var database = await GetDatabaseAsync();
+            return await database.DeleteAsync(record);
         }
         catch (Exception ex)
         {

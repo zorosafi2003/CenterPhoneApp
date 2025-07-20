@@ -235,7 +235,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
             // Configure barcode reader options based on ViewModel
             cameraView.Options = new BarcodeReaderOptions
             {
-                Formats = BarcodeFormat.Ean8,
+                Formats = BarcodeFormat.Ean8 | BarcodeFormat.Code128,
                 AutoRotate = true,
                 TryHarder = false,
                 Multiple = false
@@ -307,10 +307,13 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                 {
                     var firstResult = e.Results[0];
                     var resultText = firstResult.Value?.ToString();
-                    System.Diagnostics.Debug.WriteLine($"Detected barcode: {resultText}");
+
+
 
                     if (!string.IsNullOrEmpty(resultText))
                     {
+                        resultText = resultText?.Replace("-", "");
+
                         if (_mainViewModel != null)
                         {
                             // Check if we're in Auto Scan mode
@@ -372,7 +375,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                             {
                                 // Regular flow - show popup
                                 //search about code in student table and add value to ScannedName to show in popup
-                                _mainViewModel.ProcessScannedQrCode(resultText);
+                               await _mainViewModel.ProcessScannedQrCode(resultText);
                                 _mainViewModel.IsPopupVisible = true;
                                 _mainViewModel.IsQrScannerVisible = false;
                                 

@@ -100,7 +100,7 @@ public partial class RecordsViewModel : BaseViewModel
                 CenterId = record.CenterId
             };
 
-           // await _databaseService.DeleteQrCodeRecordAsync(qrRecord);
+            await _databaseService.DeleteQrCodeRecordAsync(qrRecord);
             
             Records.Remove(record);
             RecordsCount = Records.Count;
@@ -109,12 +109,6 @@ public partial class RecordsViewModel : BaseViewModel
 
             // Refresh the records badge in AppShell
             await RefreshRecordsBadgeAsync();
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Success",
-                    "Record deleted successfully", "OK");
-            }
         }
         catch (Exception ex)
         {

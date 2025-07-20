@@ -205,19 +205,10 @@ public partial class MainViewModel : BaseViewModel
         try
         {
             // Look up student info by code first
-            var student = await _databaseService.GetStudentByCodeAsync(code);
-            
-            // Create QR code record - need to convert center ID string to Guid
-            Guid centerGuid;
-            if (!Guid.TryParse(SelectedCenter.Id, out centerGuid))
-            {
-                // If the center ID is not a valid GUID, create a new one based on the string
-                centerGuid = Guid.NewGuid();
-                System.Diagnostics.Debug.WriteLine($"Created new GUID {centerGuid} for center ID {SelectedCenter.Id}");
-            }
+            var student = await _databaseService.GetStudentByCodeAsync(code);  
 
             var qrRecord = new QrCodeRecord(
-                centerId: centerGuid,
+                centerId: Guid.Parse(SelectedCenter.Id),
                 code: code
             );
 
@@ -266,19 +257,19 @@ public partial class MainViewModel : BaseViewModel
         {
             IsSaving = true;
 
-            // Create QR code record - need to convert center ID string to Guid
-            Guid centerGuid;
-            if (!Guid.TryParse(SelectedCenter.Id, out centerGuid))
-            {
-                // If the center ID is not a valid GUID, create a new one based on the string
-                centerGuid = Guid.NewGuid();
-                System.Diagnostics.Debug.WriteLine($"Created new GUID {centerGuid} for center ID {SelectedCenter.Id}");
-            }
-
+            var student = await _databaseService.GetStudentByCodeAsync(ScannedCode);
+       
             var qrRecord = new QrCodeRecord(
-                centerId: centerGuid,
+                centerId: Guid.Parse(SelectedCenter.Id),
                 code: ScannedCode
             );
+
+            // Add student info if found
+            if (student != null)
+            {
+                qrRecord.StudentId = student.StudentId;
+                qrRecord.StudentName = student.StudentName;
+            }
 
             // Save to database
             await _databaseService.SaveQrCodeRecordAsync(qrRecord);
@@ -358,22 +349,18 @@ public partial class MainViewModel : BaseViewModel
     }
 
     // Helper method to parse scanned QR text into components
-    public void ProcessScannedQrCode(string qrText)
+    public async Task  ProcessScannedQrCode(string qrText)
     {
         ScannedQrText = qrText;
+        ScannedCode = qrText;
 
-        // Example parsing logic - adjust based on your QR code format
-        // Assuming QR code format is something like "CODE|NAME|CENTER" or similar
-        var parts = qrText.Split('|', ';', ',');
+        var student = await _databaseService.GetStudentByCodeAsync(qrText);
+        if (student != null)
+        {
+            ScannedName = student.StudentName;
+        }
 
-        if (parts.Length >= 1)
-            ScannedCode = parts[0].Trim();
-        if (parts.Length >= 2)
-            ScannedName = parts[1].Trim();
-        if (parts.Length >= 3)
-            ScannedCenter = parts[2].Trim();
-        else
-            ScannedCenter = SelectedCenter?.Name ?? string.Empty;
+        ScannedCenter = SelectedCenter?.Name ?? string.Empty;
     }
 
     private void ResetScannedData()

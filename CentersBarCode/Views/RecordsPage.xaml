@@ -31,7 +31,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
-                                
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
                                 <Label
@@ -43,6 +43,11 @@
                                     Grid.Column="1"
                                     FontAttributes="Bold"
                                     Text="Date"
+                                    VerticalOptions="Center" />
+                                <Label
+                                    Grid.Column="2"
+                                    FontAttributes="Bold"
+                                    Text="Actions"
                                     VerticalOptions="Center" />
                             </Grid>
                         </CollectionView.Header>
@@ -57,6 +62,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <!--  Add separator line  -->
@@ -85,6 +91,22 @@
                                         Margin="0,5,0,2"
                                         FontSize="12"
                                         Text="{Binding Date, StringFormat='{0}'}"
+                                        VerticalOptions="Center" />
+
+                                    <!--  Delete Button  -->
+                                    <Button
+                                        Grid.Row="0"
+                                        Grid.Column="2"
+                                        Grid.RowSpan="2"
+                                        BackgroundColor="Red"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RecordsViewModel}}, Path=DeleteRecordCommand}"
+                                        CommandParameter="{Binding .}"
+                                        Text="Delete"
+                                        TextColor="White"
+                                        FontSize="12"
+                                        HeightRequest="40"
+                                        WidthRequest="70"
+                                        CornerRadius="5"
                                         VerticalOptions="Center" />
 
                                     <!--  Second Row: Name  -->

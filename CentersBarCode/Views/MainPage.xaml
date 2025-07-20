@@ -67,7 +67,7 @@
             <Frame
                 Padding="20,20,20,10"
                 CornerRadius="10"
-                HeightRequest="210"
+                HeightRequest="230"
                 HorizontalOptions="Center"
                 VerticalOptions="Center"
                 WidthRequest="300">
