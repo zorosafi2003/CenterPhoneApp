@@ -405,8 +405,8 @@ public class ApiService : IApiService
             // Create request payload
             var attachRequest = new
             {
-                studentId = studentId,
-                studentCode = code
+                id = studentId,
+                code = code
             };
 
             var jsonContent = JsonSerializer.Serialize(attachRequest);

@@ -4,7 +4,7 @@
   "GetStudentByPhoneEndpoint": "/centers-api/students/by-phone",
   "GetStudentByCodeEndpoint": "/centers-api/students/by-code",
   "SetStudentAttendanceEndpoint": "/centers-api/student-attendances/create-range",
-  "AttachStudentToCodeEndpoint": "/centers-api/students/attach-code",
+  "AttachStudentToCodeEndpoint": "/centers-api/students/update-code",
   "GetCentersEndpoint": "/centers-api/centers/list",
   "AuthenticationEndpoint": "/auth/login"
 }
