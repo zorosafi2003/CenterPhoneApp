@@ -49,7 +49,7 @@ public partial class AppShellViewModel : BaseViewModel
     private bool _isAutoImporting;
 
     public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
-        IStudentService studentService, ICenterService centerService, IGoogleAuthService googleAuthService , IApiService apiService)
+        IStudentService studentService, ICenterService centerService, IGoogleAuthService googleAuthService, IApiService apiService)
     {
         _databaseService = databaseService;
         _authenticationService = authenticationService;
@@ -58,7 +58,7 @@ public partial class AppShellViewModel : BaseViewModel
         _googleAuthService = googleAuthService; // Added
         _apiService = apiService;
 
-       RecordsCount = 0;
+        RecordsCount = 0;
         HasBadge = false;
         StudentsCount = 0;
         HasStudentsBadge = false;
@@ -90,7 +90,7 @@ public partial class AppShellViewModel : BaseViewModel
             IsAuthenticated = isAuthenticated;
             UserEmail = _authenticationService.UserEmail ?? string.Empty;
             TeacherName = _authenticationService.TeacherName ?? string.Empty;
-            StudentName =  string.Empty;
+            StudentName = string.Empty;
             ShowFlyoutItems = isAuthenticated;
 
             System.Diagnostics.Debug.WriteLine($"Authentication state changed: {isAuthenticated}, ShowFlyoutItems: {ShowFlyoutItems}");
@@ -342,7 +342,7 @@ public partial class AppShellViewModel : BaseViewModel
     [RelayCommand]
     private async Task AutoExportDataAsync()
     {
-       
+
         if (IsAutoExporting)
         {
             System.Diagnostics.Debug.WriteLine("Centers import already in progress, ignoring request");
@@ -351,7 +351,7 @@ public partial class AppShellViewModel : BaseViewModel
 
         try
         {
-           
+
 
             var bearerToken = _authenticationService.BearerToken;
             if (string.IsNullOrEmpty(bearerToken))
@@ -370,37 +370,44 @@ public partial class AppShellViewModel : BaseViewModel
             {
                 IsAutoExporting = true;
 
-                var sendedItems = list.Take(100).ToList();
+                double result = (double)list.Count / 100; // Cast to double for floating-point division
+                int round = (int)Math.Ceiling(result);
 
-                var model = new CreateStudentAttendanceRequest
+                for (global::System.Int32 i = 0; i < round; i++)
                 {
-                    Data = sendedItems.Select(record => new DataChildOfCreateStudentAttendanceRequest
+                    try
                     {
-                        CenterId = record.CenterId,
-                        LocalId = record.Id,
-                        StudentCode = record.Code,
-                        StudentId = record.StudentId,
-                        CreatedDate = record.CreatedDateUtc
-                    }).ToList()
-                };
+                        var sendedItems = list.Skip(i * 100).Take(100).ToList();
 
-                var success = await _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken, model);
+                        var model = new CreateStudentAttendanceRequest
+                        {
+                            Data = sendedItems.Select(record => new DataChildOfCreateStudentAttendanceRequest
+                            {
+                                CenterId = record.CenterId,
+                                LocalId = record.Id,
+                                StudentCode = record.Code,
+                                StudentId = record.StudentId,
+                                CreatedDate = record.CreatedDateUtc
+                            }).ToList()
+                        };
 
-                if (success.IsSuccess)
-                {
-                    sendedItems = sendedItems.Where(x=> success.Value.InsertedLocalIdArr.Contains( x.Id)).ToList();
+                        var success = await _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken, model);
 
-                    await _databaseService.DeleteQrCodeRecordsAsync(sendedItems);
-                    await UpdateRecordsCountAsync();  
-                }
-                else
-                {
-                    if (Application.Current?.MainPage != null)
+                        if (success.IsSuccess)
+                        {
+                            sendedItems = sendedItems.Where(x => success.Value.InsertedLocalIdArr.Contains(x.Id)).ToList();
+
+                            await _databaseService.DeleteQrCodeRecordsAsync(sendedItems);
+
+                        }
+                    }
+                    catch (Exception)
                     {
-                        await Application.Current.MainPage.DisplayAlert("Warning",
-                            "No centers were imported. Please check your connection and try again.", "OK");
+
                     }
                 }
+
+                await UpdateRecordsCountAsync();
 
                 IsAutoExporting = false;
             }
@@ -461,7 +468,7 @@ public partial class AppShellViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Error in NavigateToAttachCardAsync: {ex.Message}");
         }
     }
-    
+
     // Command to navigate to manual add page
     [RelayCommand]
     private async Task NavigateToManualAddAsync()
