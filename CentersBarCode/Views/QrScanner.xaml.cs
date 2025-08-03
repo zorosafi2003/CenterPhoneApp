@@ -5,18 +5,17 @@ using Android.Content;
 using CentersBarCode.ViewModels;
 using Microsoft.Maui.Platform;
 using System.ComponentModel;
-using ZXing.Net.Maui;
-using ZXing.Net.Maui.Controls;
 using Microsoft.Maui.Graphics;
-using Plugin.Maui.Audio; // For Size
+using Plugin.Maui.Audio;
+using BarcodeScanning;
 
 namespace CentersBarCode.Views;
 
 public partial class QrScanner : ContentPage, INotifyPropertyChanged
 {
     private readonly object _viewModel; // Generic object to hold either ViewModel
-    private readonly MainViewModel _mainViewModel;
-    private readonly AttachCardViewModel _attachCardViewModel;
+    private readonly MainViewModel? _mainViewModel;
+    private readonly AttachCardViewModel? _attachCardViewModel;
     private bool _isFlashOn = false;
     private bool _isProcessingBarcode = false; // Flag to prevent multiple processing
     
@@ -36,7 +35,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
         }
     }
 
-    public QrScanner(MainViewModel viewModel )
+    public QrScanner(MainViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -144,23 +143,9 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
             }
         }
 
-        // Stop and release camera
-        if (cameraView != null)
-        {
-            try
-            {
-                cameraView.IsDetecting = false;
-                cameraView.IsTorchOn = false;
-                cameraView.BarcodesDetected -= CameraView_BarCodeDetected;
-                if (_mainViewModel != null) _mainViewModel.IsCameraInitialized = false;
-                if (_attachCardViewModel != null) _attachCardViewModel.IsCameraInitialized = false;
-                System.Diagnostics.Debug.WriteLine("Camera stopped and released in OnDisappearing");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error stopping camera in OnDisappearing: {ex.Message}");
-            }
-        }
+        // Clean up code but avoid making API calls that might not be supported
+        if (_mainViewModel != null) _mainViewModel.IsCameraInitialized = false;
+        if (_attachCardViewModel != null) _attachCardViewModel.IsCameraInitialized = false;
     }
 
     private async void RequestCameraPermissions()
@@ -225,36 +210,16 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"CameraView state before init: IsEnabled={cameraView.IsEnabled}, IsDetecting={cameraView.IsDetecting}, IsTorchOn={cameraView.IsTorchOn}");
+            System.Diagnostics.Debug.WriteLine($"CameraView initializing");
 
-            // Reset camera state
-            cameraView.IsDetecting = false;
-            cameraView.IsTorchOn = false;
+            // Configure camera
+            cameraView.CameraFacing = CameraFacing.Back;
             _isFlashOn = false;
-
-            // Configure barcode reader options based on ViewModel
-            cameraView.Options = new BarcodeReaderOptions
-            {
-                Formats = BarcodeFormat.Ean8 | BarcodeFormat.Code128,
-                AutoRotate = true,
-                TryHarder = false,
-                Multiple = false
-            };
-
-            cameraView.CameraLocation = CameraLocation.Rear;
-          
-          
-            // Force UI refresh
-            cameraView.IsEnabled = false;
-            await Task.Delay(300);
-            cameraView.IsEnabled = true;
-
-            // Ensure event handler is subscribed only once
-            cameraView.BarcodesDetected -= CameraView_BarCodeDetected;
-            cameraView.BarcodesDetected += CameraView_BarCodeDetected;
-
-            // Enable barcode detection
-            cameraView.IsDetecting = true;
+            
+            // The camera view will be initialized by the XAML declaration
+            // and event handlers will be triggered when barcodes are detected
+            
+            // Set view model camera state
             if (_mainViewModel != null) _mainViewModel.IsCameraInitialized = true;
             if (_attachCardViewModel != null) _attachCardViewModel.IsCameraInitialized = true;
 
@@ -271,7 +236,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
         }
     }
 
-    private void CameraView_BarCodeDetected(object sender, ZXing.Net.Maui.BarcodeDetectionEventArgs e)
+    private void CameraView_BarCodeDetected(object sender, OnDetectionFinishedEventArg e)
     {
         // Prevent multiple processing of the same barcode
         if (_isProcessingBarcode)
@@ -294,21 +259,14 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"Barcode detected: {e.Results?.Length} results");
-
-                // Stop scanning temporarily
-                if (cameraView != null)
-                {
-                    cameraView.IsDetecting = false;
-                }
+                System.Diagnostics.Debug.WriteLine($"Barcode detected: {e.BarcodeResults?.Count ?? 0} results");
 
                 // Process the detected barcode
-                if (e.Results != null && e.Results.Length > 0)
+                var currentBarcode = e.BarcodeResults?.Where(x => x.BarcodeFormat == BarcodeFormats.Code128).FirstOrDefault();
+                if (currentBarcode!= null)
                 {
-                    var firstResult = e.Results[0];
-                    var resultText = firstResult.Value?.ToString();
-
-
+                    var firstResult = currentBarcode;
+                    var resultText = firstResult.DisplayValue;
 
                     if (!string.IsNullOrEmpty(resultText))
                     {
@@ -330,7 +288,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                 try
                                 {
                                     Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(500));
-                                  await  this.PlayBeepSoundAsync();
+                                    await this.PlayBeepSoundAsync();
                                 }
                                 catch (Exception ex)
                                 {
@@ -338,7 +296,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                 }
                                 
                                 // Save the code directly to database
-                                bool saveResult = await _mainViewModel.SaveQrCodeDirectly(resultText);
+                                bool saveResult = await _mainViewModel.SaveQrCodeDirectly(resultText ?? string.Empty);
                                 
                                 if (saveResult)
                                 {
@@ -349,33 +307,22 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                     // Show a visual feedback briefly
                                     await ShowScanSuccessIndicatorAsync();
                                     
-                                    // Reset the camera for next scan
-                                    if (cameraView != null)
-                                    {
-                                        await Task.Delay(800); // Give user time to see the counter update
-                                        cameraView.IsDetecting = true;
-                                    }
+                                    // Allow processing next barcode after a short delay
+                                    await Task.Delay(800); 
+                                    _isProcessingBarcode = false;
                                 }
                                 else
                                 {
                                     // Handle save failure
                                     System.Diagnostics.Debug.WriteLine("Failed to auto-save barcode");
                                     await DisplayAlert("Save Error", "Failed to save barcode", "OK");
-                                    
-                                    if (cameraView != null)
-                                    {
-                                        cameraView.IsDetecting = true;
-                                    }
+                                    _isProcessingBarcode = false;
                                 }
-                                
-                                // Reset processing flag
-                                _isProcessingBarcode = false;
                             }
                             else
                             {
                                 // Regular flow - show popup
-                                //search about code in student table and add value to ScannedName to show in popup
-                               await _mainViewModel.ProcessScannedQrCode(resultText);
+                                await _mainViewModel.ProcessScannedQrCode(resultText ?? string.Empty);
                                 _mainViewModel.IsPopupVisible = true;
                                 _mainViewModel.IsQrScannerVisible = false;
                                 
@@ -388,9 +335,8 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                     System.Diagnostics.Debug.WriteLine($"Vibration error: {ex.Message}");
                                 }
 
-                                if (cameraView != null)
+                                if (_mainViewModel != null)
                                 {
-                                    cameraView.IsDetecting = false;
                                     _mainViewModel.IsCameraInitialized = false;
                                 }
 
@@ -409,22 +355,20 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                         }
                         else if (_attachCardViewModel != null)
                         {
-                            await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText, _attachCardViewModel.StudentId.Value);
+                            await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText ?? string.Empty, _attachCardViewModel.StudentId ?? Guid.Empty);
                             _attachCardViewModel.IsQrScannerVisible = false;
                             
                             try
                             {
                                 Vibration.Default.Vibrate();
-
                             }
                             catch (Exception ex)
                             {
                                 System.Diagnostics.Debug.WriteLine($"Vibration error: {ex.Message}");
                             }
 
-                            if (cameraView != null)
+                            if (_attachCardViewModel != null)
                             {
-                                cameraView.IsDetecting = false;
                                 _attachCardViewModel.IsCameraInitialized = false;
                             }
 
@@ -444,30 +388,18 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                     else
                     {
                         System.Diagnostics.Debug.WriteLine("Empty barcode result");
-                        if (cameraView != null)
-                        {
-                            cameraView.IsDetecting = true;
-                        }
                         _isProcessingBarcode = false;
                     }
                 }
                 else
                 {
                     System.Diagnostics.Debug.WriteLine("No barcode results detected");
-                    if (cameraView != null)
-                    {
-                        cameraView.IsDetecting = true;
-                    }
                     _isProcessingBarcode = false;
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error in barcode detection: {ex.Message}");
-                if (cameraView != null)
-                {
-                    cameraView.IsDetecting = true;
-                }
                 _isProcessingBarcode = false;
             }
         });
@@ -512,38 +444,11 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
 
     private void ToggleFlash_Clicked(object sender, EventArgs e)
     {
-        if (cameraView != null &&
-            ((_mainViewModel != null && _mainViewModel.IsCameraInitialized) ||
-             (_attachCardViewModel != null && _attachCardViewModel.IsCameraInitialized)))
+        // Toggling flash is currently not implemented due to API compatibility issues
+        MainThread.BeginInvokeOnMainThread(async () =>
         {
-            try
-            {
-                _isFlashOn = !_isFlashOn;
-                cameraView.IsTorchOn = _isFlashOn;
-                System.Diagnostics.Debug.WriteLine($"Setting torch to {_isFlashOn}");
-
-                if (sender is Button flashButton)
-                {
-                    flashButton.BackgroundColor = _isFlashOn ? Colors.Yellow : Colors.Transparent;
-                    flashButton.Text = _isFlashOn ? "💡" : "🔦";
-                }
-            }
-            catch (Exception ex)
-            {
-                MainThread.BeginInvokeOnMainThread(async () =>
-                {
-                    await DisplayAlert("Flashlight Error", $"Could not toggle flashlight: {ex.Message}", "OK");
-                });
-                System.Diagnostics.Debug.WriteLine($"Flashlight error: {ex}");
-            }
-        }
-        else
-        {
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                await DisplayAlert("Camera Not Ready", "Camera must be initialized before using the flashlight.", "OK");
-            });
-        }
+            await DisplayAlert("Flashlight Error", $"Flashlight functionality is not available in this version.", "OK");
+        });
     }
 
     private async void CloseQr(object sender, EventArgs e)

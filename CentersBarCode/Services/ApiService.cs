@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Maui.ApplicationModel.Communication;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using ZXing.Aztec.Internal;
 
 namespace CentersBarCode.Services;
 

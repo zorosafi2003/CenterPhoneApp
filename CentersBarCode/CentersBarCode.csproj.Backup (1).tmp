@@ -20,8 +20,8 @@
 		<ApplicationId>com.teachers-eg.CentersBarCode</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>6.0</ApplicationDisplayVersion>
-		<ApplicationVersion>6</ApplicationVersion>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
@@ -61,8 +61,6 @@
 	<ItemGroup>
 		<!-- Update Camera.MAUI to the latest version -->
 		<PackageReference Include="BarcodeScanning.Native.Maui" Version="1.7.3" />
-		<PackageReference Include="ZXing.Net" Version="0.16.9" />
-		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
 		<PackageReference Include="CommunityToolkit.MVVM" Version="8.4.0" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.6" />
 		<PackageReference Include="Microsoft.Identity.Client" Version="4.73.0" />
@@ -71,10 +69,12 @@
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
-		<PackageReference Include="Plugin.Maui.Audio" Version="3.0.0" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 		<PackageReference Include="UraniumUI" Version="2.11.0" />
 		<PackageReference Include="Xamarin.Build.Download" Version="0.11.4" />
+		
+		<!-- Keep ZXing packages for additional barcode functionality -->
+		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">

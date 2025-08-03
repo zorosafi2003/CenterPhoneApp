@@ -3,7 +3,7 @@
     x:Class="CentersBarCode.Views.QrScanner"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+    xmlns:barcode="clr-namespace:BarcodeScanning;assembly=BarcodeScanning.Native.Maui"
     Title="QrScanner"
     x:Name="ScannerPage">
     <Grid
@@ -14,14 +14,14 @@
         IsVisible="{Binding IsQrScannerVisible}"
         RowDefinitions="Auto,*,*,*">
 
-        <zxing:CameraBarcodeReaderView
+        <barcode:CameraView
             x:Name="cameraView"
             Grid.Row="2"
-            BarcodesDetected="CameraView_BarCodeDetected"
-            CameraLocation="Rear"
+            CameraEnabled ="True"
+            OnDetectionFinished="CameraView_BarCodeDetected"
+            CameraFacing="Back"
             HeightRequest="150"
             HorizontalOptions="Fill"
-            IsDetecting="True"
             VerticalOptions="Fill"
             WidthRequest="300" />
 
