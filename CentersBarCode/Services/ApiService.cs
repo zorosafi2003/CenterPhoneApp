@@ -17,11 +17,14 @@ public class ApiService : IApiService
     private readonly HttpClient _httpClient;
     private readonly ILogger<ApiService> _logger;
     private ApiConfiguration? _apiConfig;
+    private readonly ILogoutService _logoutService;
 
-    public ApiService(HttpClient httpClient, ILogger<ApiService> logger)
+
+    public ApiService(HttpClient httpClient, ILogger<ApiService> logger, ILogoutService logoutService)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _logoutService = logoutService;
     }
 
     public async Task<ApiConfiguration> LoadApiConfigurationAsync()
@@ -62,114 +65,50 @@ public class ApiService : IApiService
             return _apiConfig;
         }
     }
-
-    public async Task<List<StudentApiResponse>> GetStudentsAsync(string bearerToken)
+    private async Task<T?> GetAsync<T>(string url, string bearerToken)
     {
         try
         {
-            var config = await LoadApiConfigurationAsync();
-            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.StudentsEndpoint}";
-
-            _logger.LogInformation("Making Students API call to: {RequestUri}", requestUri);
-
-            // Set authorization header
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
-            
-            // Add common headers
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var response = await _httpClient.GetAsync(requestUri);
+            var response = await _httpClient.GetAsync(url);
 
-            if (response.IsSuccessStatusCode)
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                var jsonContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Students API response received successfully");
-
-                var students = JsonSerializer.Deserialize<List<StudentApiResponse>>(jsonContent, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return students ?? new List<StudentApiResponse>();
+                _logger.LogWarning("Unauthorized access detected (401), triggering logout.");
+                await _logoutService.LogoutAsync();
+                return default;
             }
-            else
+
+            if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Students API call failed with status: {StatusCode}, Content: {ErrorContent}", 
-                    response.StatusCode, errorContent);
-                
-                throw new HttpRequestException($"Students API call failed with status: {response.StatusCode}. {errorContent}");
+                _logger.LogError("API call failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
+                throw new HttpRequestException($"API call failed with status: {response.StatusCode}");
             }
-        }
-        catch (HttpRequestException)
-        {
-            throw; // Re-throw HTTP exceptions as-is
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while calling students API");
-            throw new InvalidOperationException($"Failed to fetch students: {ex.Message}", ex);
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         finally
         {
-            // Clear authorization header for security
             _httpClient.DefaultRequestHeaders.Authorization = null;
         }
     }
-
+    public async Task<List<StudentApiResponse>> GetStudentsAsync(string bearerToken)
+    {
+        var config = await LoadApiConfigurationAsync();
+        var url = $"{config.BaseUrl.TrimEnd('/')}{config.StudentsEndpoint}";
+        var result = await GetAsync<List<StudentApiResponse>>(url, bearerToken);
+        return result ?? new List<StudentApiResponse>();
+    }
     public async Task<List<CenterApiResponse>> GetCentersAsync(string bearerToken)
     {
-        try
-        {
-            var config = await LoadApiConfigurationAsync();
-            var requestUri = $"{config.BaseUrl.TrimEnd('/')}{config.CentersEndpoint}";
-
-            _logger.LogInformation("Making Centers API call to: {RequestUri}", requestUri);
-
-            // Set authorization header
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
-            
-            // Add common headers
-            _httpClient.DefaultRequestHeaders.Accept.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            var response = await _httpClient.GetAsync(requestUri);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var jsonContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("Centers API response received successfully");
-
-                var centers = JsonSerializer.Deserialize<List<CenterApiResponse>>(jsonContent, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return centers ?? new List<CenterApiResponse>();
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Centers API call failed with status: {StatusCode}, Content: {ErrorContent}", 
-                    response.StatusCode, errorContent);
-                
-                throw new HttpRequestException($"Centers API call failed with status: {response.StatusCode}. {errorContent}");
-            }
-        }
-        catch (HttpRequestException)
-        {
-            throw; // Re-throw HTTP exceptions as-is
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while calling centers API");
-            throw new InvalidOperationException($"Failed to fetch centers: {ex.Message}", ex);
-        }
-        finally
-        {
-            // Clear authorization header for security
-            _httpClient.DefaultRequestHeaders.Authorization = null;
-        }
+        var config = await LoadApiConfigurationAsync();
+        var url = $"{config.BaseUrl.TrimEnd('/')}{config.CentersEndpoint}";
+        var result = await GetAsync<List<CenterApiResponse>>(url, bearerToken);
+        return result ?? new List<CenterApiResponse>();
     }
 }

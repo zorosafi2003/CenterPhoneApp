@@ -45,9 +45,11 @@ public static class MauiProgram
 		builder.Services.AddHttpClient<IApiService, ApiService>();
 		builder.Services.AddSingleton<IStudentService, StudentService>();
 		builder.Services.AddSingleton<ICenterService, CenterService>();
-		
-		// Register pages
-		builder.Services.AddTransient<Views.MainPage>();
+        builder.Services.AddSingleton<ILogoutService, LogoutService>();
+
+
+        // Register pages
+        builder.Services.AddTransient<Views.MainPage>();
 		builder.Services.AddTransient<Views.LoginPage>();
 		builder.Services.AddTransient<Views.RecordsPage>();
 		builder.Services.AddTransient<Views.AttachCardPage>();

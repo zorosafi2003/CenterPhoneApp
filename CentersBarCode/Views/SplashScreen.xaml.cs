@@ -89,9 +89,11 @@ public partial class SplashScreen : ContentPage
             var apiLogger = NullLogger<ApiService>.Instance;
             var studentLogger = NullLogger<StudentService>.Instance;
             var centerLogger = NullLogger<CenterService>.Instance;
-            
+            var logoutLogger = NullLogger<LogoutService>.Instance; // <-- NEW
+
             var httpClient = new HttpClient();
-            var apiService = new Services.ApiService(httpClient, apiLogger);
+            var logoutService = new LogoutService(authService, databaseService, logoutLogger);
+            var apiService = new Services.ApiService(httpClient, apiLogger, logoutService);
             var studentService = new Services.StudentService(databaseService, apiService, studentLogger);
             var centerService = new Services.CenterService(databaseService, apiService, centerLogger);
             
