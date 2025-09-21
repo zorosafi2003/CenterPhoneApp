@@ -82,6 +82,7 @@
                                         FontSize="14"
                                         FontAttributes="Bold"
                                         LineBreakMode="TailTruncation"
+                                        TextColor="Black"
                                         Text="{Binding Code}"
                                         VerticalOptions="Center" />
 
@@ -90,6 +91,7 @@
                                         Grid.Column="1"
                                         Margin="0,5,0,2"
                                         FontSize="12"
+                                        TextColor="Black"
                                         Text="{Binding Date, StringFormat='{0}'}"
                                         VerticalOptions="Center" />
 
@@ -119,7 +121,7 @@
                                         FontAttributes="Italic"
                                         LineBreakMode="TailTruncation"
                                         Text="{Binding Name}"
-                                        TextColor="Gray"
+                                        TextColor="Black"
                                         VerticalOptions="Center" />
 
                                 </Grid>

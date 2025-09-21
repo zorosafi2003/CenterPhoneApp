@@ -15,6 +15,9 @@ public partial class MainViewModel : BaseViewModel
     private string _studentName = string.Empty;
 
     [ObservableProperty]
+    private string _groupName = string.Empty;
+
+    [ObservableProperty]
     private string _teacherName = string.Empty;
 
     [ObservableProperty]
@@ -37,6 +40,9 @@ public partial class MainViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _scannedCenter;
+
+    [ObservableProperty]
+    private string _scannedGroup;
 
     [ObservableProperty]
     private bool _isCameraInitialized;
@@ -156,7 +162,7 @@ public partial class MainViewModel : BaseViewModel
         {
             if (Application.Current?.MainPage != null)
             {
-                Application.Current.MainPage.DisplayAlert("Error", 
+                Application.Current.MainPage.DisplayAlert("Error",
                     "Please select a center before starting Auto Scan.", "OK");
             }
             return;
@@ -166,7 +172,7 @@ public partial class MainViewModel : BaseViewModel
         IsAutoScanMode = true;
         ShowAutoScanCounter = true;
         AutoScanCount = 0;
-        
+
         // Show scanner UI
         IsQrScannerVisible = true;
         IsCameraInitialized = true;
@@ -175,18 +181,18 @@ public partial class MainViewModel : BaseViewModel
     }
 
     // Direct save QR code without showing popup (for Auto Scan mode)
-    public async Task<bool> SaveQrCodeDirectly(string code)
+    public async Task<int?> SaveQrCodeDirectly(string code)
     {
         if (SelectedCenter == null || string.IsNullOrEmpty(code))
         {
             System.Diagnostics.Debug.WriteLine("Cannot save QR code: Center not selected or code is empty");
-            return false;
+            return null;
         }
 
         try
         {
             // Look up student info by code first
-            var student = await _databaseService.GetStudentByCodeAsync(code);  
+            var student = await _databaseService.GetStudentByCodeAsync(code);
 
             var qrRecord = new QrCodeRecord(
                 centerId: Guid.Parse(SelectedCenter.Id),
@@ -201,22 +207,42 @@ public partial class MainViewModel : BaseViewModel
             }
 
             // Save to database
-            await _databaseService.SaveQrCodeRecordAsync(qrRecord);
+           var saveQrCodeRecordAsyncResult =  await _databaseService.SaveQrCodeRecordAsync(qrRecord);
 
-            // Increment auto scan counter
-            AutoScanCount++;
+            if (saveQrCodeRecordAsyncResult != 0)
+            {
+                // Increment auto scan counter
+                AutoScanCount++;
 
-            // Refresh the records badge in AppShell
-            await RefreshRecordsBadgeAsync();
+                // Refresh the records badge in AppShell
+                await RefreshRecordsBadgeAsync();
 
-            System.Diagnostics.Debug.WriteLine($"QR Code saved directly: CenterId={qrRecord.CenterId}, Code={code}, CreatedDateUtc={qrRecord.CreatedDateUtc}, AutoScanCount={AutoScanCount}");
-            
-            return true;
+                System.Diagnostics.Debug.WriteLine($"QR Code saved directly: CenterId={qrRecord.CenterId}, Code={code}, CreatedDateUtc={qrRecord.CreatedDateUtc}, AutoScanCount={AutoScanCount}");
+            }
+
+            return saveQrCodeRecordAsyncResult;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error saving QR code directly: {ex.Message}");
-            return false;
+            return null;
+        }
+    }
+
+
+    // Direct save QR code without showing popup (for Auto Scan mode)
+    public async Task<Student?> GetStudentInfo(string code)
+    {
+        try
+        {
+            // Look up student info by code first
+            var student = await _databaseService.GetStudentByCodeAsync(code);
+            return student;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Not Found Student");
+            return null;
         }
     }
 
@@ -239,7 +265,7 @@ public partial class MainViewModel : BaseViewModel
             IsSaving = true;
 
             var student = await _databaseService.GetStudentByCodeAsync(ScannedCode);
-       
+
             var qrRecord = new QrCodeRecord(
                 centerId: Guid.Parse(SelectedCenter.Id),
                 code: ScannedCode
@@ -255,14 +281,9 @@ public partial class MainViewModel : BaseViewModel
             // Save to database
             await _databaseService.SaveQrCodeRecordAsync(qrRecord);
 
+
             // Refresh the records badge in AppShell
             await RefreshRecordsBadgeAsync();
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Success",
-                    $"QR Code saved successfully for {SelectedCenter.Name}", "OK");
-            }
 
             // Close the popup and reset values
             IsPopupVisible = false;
@@ -330,7 +351,7 @@ public partial class MainViewModel : BaseViewModel
     }
 
     // Helper method to parse scanned QR text into components
-    public async Task  ProcessScannedQrCode(string qrText)
+    public async Task ProcessScannedQrCode(string qrText)
     {
         ScannedQrText = qrText;
         ScannedCode = qrText;
@@ -339,6 +360,7 @@ public partial class MainViewModel : BaseViewModel
         if (student != null)
         {
             ScannedName = student.StudentName;
+            ScannedGroup = student.StudentGroup;
         }
 
         ScannedCenter = SelectedCenter?.Name ?? string.Empty;
@@ -350,6 +372,7 @@ public partial class MainViewModel : BaseViewModel
         ScannedCode = string.Empty;
         ScannedName = string.Empty;
         ScannedCenter = string.Empty;
+        ScannedGroup = string.Empty;
     }
 
     private async Task RefreshRecordsBadgeAsync()

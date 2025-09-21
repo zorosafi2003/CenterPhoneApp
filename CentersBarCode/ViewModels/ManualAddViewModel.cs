@@ -8,6 +8,9 @@ public partial class ManualAddViewModel : BaseViewModel
     private readonly IDatabaseService _databaseService;
     private readonly ICenterService _centerService;
     private readonly IAuthenticationService _authenticationService;
+    
+    // Event to notify when search command is executed
+    public event Action SearchCommandExecuted;
 
     [ObservableProperty]
     private ObservableCollection<Center> _centers;
@@ -48,7 +51,7 @@ public partial class ManualAddViewModel : BaseViewModel
         // Initialize collections
         Centers = new ObservableCollection<Center>();
         SearchResults = new ObservableCollection<Student>();
-        
+
         // Initialize properties
         SelectedCenter = null;
         SelectedStudent = null;
@@ -58,7 +61,7 @@ public partial class ManualAddViewModel : BaseViewModel
         HasResults = false;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
         Title = "Manual Attendance";
-        
+
         // Initialize database and load centers
         InitializeAsync();
     }
@@ -99,18 +102,13 @@ public partial class ManualAddViewModel : BaseViewModel
         }
     }
 
-    // Handle search text changes
+    // Handle search text changes - now just updates IsSearchEnabled
     partial void OnSearchTextChanged(string value)
     {
         // Enable search if we have at least 3 characters or a code pattern
         IsSearchEnabled = !string.IsNullOrWhiteSpace(value) && (value.Length >= 3 || Regex.IsMatch(value, @"^\d{3,}$"));
-        
-        if (IsSearchEnabled)
-        {
-            // Auto-search after typing pause
-            SearchDebounced();
-        }
-        else
+
+        if (string.IsNullOrWhiteSpace(value))
         {
             // Clear results if search box is cleared
             SearchResults.Clear();
@@ -131,36 +129,14 @@ public partial class ManualAddViewModel : BaseViewModel
         OnPropertyChanged(nameof(CanSaveAttendance));
     }
 
-    // Debounced search to avoid too many searches while typing
-    private CancellationTokenSource? _searchCts;
-    private async void SearchDebounced()
-    {
-        // Cancel any previous search
-        _searchCts?.Cancel();
-        _searchCts = new CancellationTokenSource();
-        var token = _searchCts.Token;
-
-        try
-        {
-            // Wait a bit to avoid searching on every keystroke
-            await Task.Delay(500, token);
-            await SearchAsync();
-        }
-        catch (TaskCanceledException)
-        {
-            // Ignore cancellation
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Search error: {ex.Message}");
-        }
-    }
-
-    // Command to perform the search
+    // Command to perform the search - now only triggered by button
     [RelayCommand]
     private async Task SearchAsync()
     {
-        if (string.IsNullOrWhiteSpace(SearchText) || SearchText.Length < 3)
+        // Notify that the search command is executed (for keyboard dismissal)
+        SearchCommandExecuted?.Invoke();
+        
+        if (string.IsNullOrWhiteSpace(SearchText))
         {
             SearchResults.Clear();
             HasResults = false;
@@ -172,47 +148,19 @@ public partial class ManualAddViewModel : BaseViewModel
             IsSearching = true;
             SearchResults.Clear();
 
-            // Determine if we're searching by phone or code
-            var isSearchingByPhone = Regex.IsMatch(SearchText, @"^\d{10,11}$");
-            var isSearchingByCode = !isSearchingByPhone;
 
-            Student? student = null;
+            var allStudents = await _databaseService.GetAllStudentsAsync();
+            var matchingStudents = allStudents
+                .Where(s => s.StudentCode.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                           s.PhoneNumber.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                           s.ParentPhone1.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                           s.ParentPhone2.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+                .Take(10) // Limit to 10 results
+                .ToList();
 
-            // Search by phone
-            if (isSearchingByPhone)
+            foreach (var matchingStudent in matchingStudents)
             {
-                student = await _databaseService.GetStudentByPhoneAsync(SearchText);
-                if (student != null)
-                {
-                    SearchResults.Add(student);
-                }
-            }
-            // Search by code
-            else
-            {
-                student = await _databaseService.GetStudentByCodeAsync(SearchText);
-                if (student != null)
-                {
-                    SearchResults.Add(student);
-                }
-                
-                // If no exact match, try to find students with code containing the search text
-                if (SearchResults.Count == 0)
-                {
-                    var allStudents = await _databaseService.GetAllStudentsAsync();
-                    var matchingStudents = allStudents
-                        .Where(s => s.StudentCode.Contains(SearchText, StringComparison.OrdinalIgnoreCase) || 
-                                   s.PhoneNumber.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                                   s.ParentPhone1.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                                   s.ParentPhone2.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
-                        .Take(10) // Limit to 10 results
-                        .ToList();
-                    
-                    foreach (var matchingStudent in matchingStudents)
-                    {
-                        SearchResults.Add(matchingStudent);
-                    }
-                }
+                SearchResults.Add(matchingStudent);
             }
 
             HasResults = SearchResults.Count > 0;
@@ -222,7 +170,7 @@ public partial class ManualAddViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Error during search: {ex.Message}");
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", 
+                await Application.Current.MainPage.DisplayAlert("Error",
                     $"Failed to search: {ex.Message}", "OK");
             }
         }
@@ -255,7 +203,7 @@ public partial class ManualAddViewModel : BaseViewModel
             if (Application.Current?.MainPage != null)
             {
                 confirmResult = await Application.Current.MainPage.DisplayAlert("Confirm",
-                    $"Are you sure you want to add attendance ?", 
+                    $"Are you sure you want to add attendance ?",
                     "Yes", "No");
             }
 

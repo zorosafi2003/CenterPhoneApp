@@ -49,20 +49,33 @@
         </Picker>
       </VerticalStackLayout>
 
-      <!-- Search Input -->
-      <Grid Grid.Row="2" ColumnDefinitions="*, Auto" ColumnSpacing="0">
+      <!-- Search Input with Button -->
+      <Grid Grid.Row="2" ColumnDefinitions="*, Auto" ColumnSpacing="8">
         <Border
             Grid.Column="0"
             Stroke="#DEE2E6"
             StrokeThickness="1"
             StrokeShape="RoundRectangle 12,12,12,12">
           <Entry
+              x:Name="SearchEntry"
               Placeholder="Enter phone or code to search"
               Text="{Binding SearchText}"
               HeightRequest="50"
+              TextColor="black"
               BackgroundColor="White"
               Margin="10,0" />
         </Border>
+        <Button
+            Grid.Column="1"
+            Text="Search"
+            Command="{Binding SearchCommand}"
+            CommandParameter="{Binding Source={x:Reference SearchEntry}}"
+            HeightRequest="50"
+            WidthRequest="100"
+            BackgroundColor="#007BFF"
+            TextColor="White"
+            FontAttributes="Bold"
+            CornerRadius="12" />
       </Grid>
     </Grid>
 
@@ -76,7 +89,7 @@
           FontSize="18"
           Margin="0,16,0,8"
           IsVisible="{Binding HasResults}"
-          TextColor="#343A40" />
+           TextColor="black" />
 
       <!-- Results List -->
       <Border
@@ -95,7 +108,7 @@
               <Label
                   Text="No students found"
                   FontSize="16"
-                  TextColor="#6C757D"
+                   TextColor="black"
                   HorizontalTextAlignment="Center" />
             </StackLayout>
           </CollectionView.EmptyView>
@@ -109,7 +122,7 @@
                     Text="{Binding StudentName}"
                     FontAttributes="Bold"
                     FontSize="16"
-                    TextColor="#343A40" />
+                    TextColor="black" />
                 <HorizontalStackLayout
                     Grid.Row="1"
                     Grid.Column="1"
@@ -118,11 +131,11 @@
                       Text="Code:"
                       FontAttributes="Bold"
                       FontSize="14"
-                      TextColor="#6C757D" />
+                      TextColor="black" />
                   <Label
                       Text="{Binding StudentCode}"
                       FontSize="14"
-                      TextColor="#6C757D" />
+                       TextColor="black" />
                   
                 </HorizontalStackLayout>
               </Grid>

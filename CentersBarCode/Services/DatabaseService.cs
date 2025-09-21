@@ -65,8 +65,18 @@ public class DatabaseService : IDatabaseService
         try
         {
             var database = await GetDatabaseAsync();
-            record.Id = Guid.NewGuid();
-            return await database.InsertAsync(record);
+
+            var qrCodes = await database.Table<QrCodeRecord>().Where(r => r.Code == record.Code).ToListAsync();
+             var isExist = qrCodes.FirstOrDefault(r => r.CreatedDateUtc.Date == DateTime.UtcNow.Date);
+
+            if (isExist == null) {
+                record.Id = Guid.NewGuid();
+                return await database.InsertAsync(record);
+            }
+            else
+            {
+                return 0; // Record already exists for today
+            }
 
         }
         catch (Exception ex)

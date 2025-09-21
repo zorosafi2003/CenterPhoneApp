@@ -84,7 +84,7 @@ public class ApiService : IApiService
             var authRequest = new
             {
                 Skip = 0,
-                Take = 1000
+                Take = 10000
             };
 
             var jsonContent = JsonSerializer.Serialize(authRequest);

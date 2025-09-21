@@ -131,8 +131,8 @@
                     BackgroundColor="Transparent"
                     FontSize="20"
                     HorizontalTextAlignment="Center"
-                    IsVisible="{Binding PhoneNumber}"
-                    Text="{Binding PhoneNumber}"
+                    IsVisible="{Binding GroupName}"
+                    Text="{Binding GroupName}"
                     TextColor="#FFFFFF" />
                 <Label
                      BackgroundColor="Transparent"
