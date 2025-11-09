@@ -48,6 +48,21 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isAutoImporting;
 
+    [ObservableProperty]
+    private int _groupsCount;
+
+    [ObservableProperty]
+    private bool _hasGroupsBadge;
+
+    [ObservableProperty]
+    private int _examsCount;
+
+    [ObservableProperty]
+    private bool _hasExamsBadge;
+
+    [ObservableProperty]
+    private string _appVersion = AppInfo.VersionString;
+
     public AppShellViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService,
         IStudentService studentService, ICenterService centerService, IGoogleAuthService googleAuthService, IApiService apiService)
     {
@@ -64,6 +79,10 @@ public partial class AppShellViewModel : BaseViewModel
         HasStudentsBadge = false;
         CentersCount = 0;
         HasCentersBadge = false;
+        GroupsCount = 0;
+        HasGroupsBadge = false;
+        ExamsCount = 0;
+        HasExamsBadge = false;
         IsAuthenticated = _authenticationService.IsAuthenticated;
         UserEmail = _authenticationService.UserEmail ?? string.Empty;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
@@ -80,6 +99,8 @@ public partial class AppShellViewModel : BaseViewModel
             await UpdateRecordsCountAsync();
             await UpdateStudentsCountAsync();
             await UpdateCentersCountAsync();
+            await UpdateGroupsCountAsync();
+            await UpdateExamsCountAsync();
         });
     }
 
@@ -169,82 +190,52 @@ public partial class AppShellViewModel : BaseViewModel
         }
     }
 
-    // Command to import students  
-    private async Task ImportStudentsAsync()
+    public async Task UpdateGroupsCountAsync()
     {
-        if (IsAutoImporting)
-        {
-            System.Diagnostics.Debug.WriteLine("Student import already in progress, ignoring request");
-            return;
-        }
-
         try
         {
-            IsAutoImporting = true;
+            var groups = await _databaseService.GetAllGroupsAsync();
+            var newCount = groups.Count;
 
-            var bearerToken = _authenticationService.BearerToken;
-            if (string.IsNullOrEmpty(bearerToken))
+            if (GroupsCount != newCount)
             {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Error",
-                        "You must be logged in to import students.", "OK");
-                }
-                return;
-            }
-
-            System.Diagnostics.Debug.WriteLine("Starting student import process");
-
-            var success = await _studentService.ImportStudentsAsync(bearerToken);
-
-            if (success)
-            {
-                await UpdateStudentsCountAsync();
-
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Success",
-                        $"Successfully imported {StudentsCount} students!", "OK");
-                }
-            }
-            else
-            {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Warning",
-                        "No students were imported. Please check your connection and try again.", "OK");
-                }
-            }
-        }
-        catch (HttpRequestException httpEx)
-        {
-            System.Diagnostics.Debug.WriteLine($"HTTP error during student import: {httpEx.Message}");
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Network Error",
-                    "Failed to connect to the server. Please check your internet connection and try again.", "OK");
+                GroupsCount = newCount;
+                HasGroupsBadge = GroupsCount > 0;
+                System.Diagnostics.Debug.WriteLine($"AppShell Groups Badge updated: {GroupsCount} groups");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error during student import: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error updating AppShell groups count: {ex.Message}");
+            GroupsCount = 0;
+            HasGroupsBadge = false;
+        }
+    }
 
-            if (Application.Current?.MainPage != null)
+    public async Task UpdateExamsCountAsync()
+    {
+        try
+        {
+            var exams = await _databaseService.GetAllExamsAsync();
+            var newCount = exams.Count;
+
+            if (ExamsCount != newCount)
             {
-                await Application.Current.MainPage.DisplayAlert("Error",
-                    $"Failed to import students: {ex.Message}", "OK");
+                ExamsCount = newCount;
+                HasExamsBadge = ExamsCount > 0;
+                System.Diagnostics.Debug.WriteLine($"AppShell Exams Badge updated: {ExamsCount} exams");
             }
         }
-        finally
+        catch (Exception ex)
         {
-            IsAutoImporting = false;
-            System.Diagnostics.Debug.WriteLine("Student import process completed");
+            System.Diagnostics.Debug.WriteLine($"Error updating AppShell exams count: {ex.Message}");
+            ExamsCount = 0;
+            HasExamsBadge = false;
         }
     }
 
     // Command to import centers   
-    private async Task ImportCentersAsync()
+    private async Task ImportDataAsync()
     {
         if (IsAutoImporting)
         {
@@ -269,16 +260,18 @@ public partial class AppShellViewModel : BaseViewModel
 
             System.Diagnostics.Debug.WriteLine("Starting centers import process");
 
-            var success = await _centerService.ImportCentersAsync(bearerToken);
+            var success = await _centerService.ImportDataAsync(bearerToken);
 
             if (success)
             {
                 await UpdateCentersCountAsync();
+                await UpdateStudentsCountAsync();
+                await UpdateGroupsCountAsync();
 
                 if (Application.Current?.MainPage != null)
                 {
                     await Application.Current.MainPage.DisplayAlert("Success",
-                        $"Successfully imported {CentersCount} centers!", "OK");
+                        $"Successfully imported Data!", "OK");
                 }
             }
             else
@@ -286,7 +279,7 @@ public partial class AppShellViewModel : BaseViewModel
                 if (Application.Current?.MainPage != null)
                 {
                     await Application.Current.MainPage.DisplayAlert("Warning",
-                        "No centers were imported. Please check your connection and try again.", "OK");
+                        "Data not imported. Please check your connection and try again.", "OK");
                 }
             }
         }
@@ -307,7 +300,7 @@ public partial class AppShellViewModel : BaseViewModel
             if (Application.Current?.MainPage != null)
             {
                 await Application.Current.MainPage.DisplayAlert("Error",
-                    $"Failed to import centers: {ex.Message}", "OK");
+                    $"Failed to import data: {ex.Message}", "OK");
             }
         }
         finally
@@ -316,8 +309,6 @@ public partial class AppShellViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine("Centers import process completed");
         }
     }
-
-
 
     [RelayCommand]
     private async Task AutoImportDataAsync()
@@ -328,9 +319,7 @@ public partial class AppShellViewModel : BaseViewModel
             {
                 System.Diagnostics.Debug.WriteLine("Auto-importing centers and students after successful login");
 
-                // Import centers first, then students
-                await ImportCentersAsync();
-                await ImportStudentsAsync();
+                await ImportDataAsync();
             }
         }
         catch (Exception ex)
@@ -391,15 +380,15 @@ public partial class AppShellViewModel : BaseViewModel
                             }).ToList()
                         };
 
-                        var success = await _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken, model);
+                        //var success = await _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken, model);
 
-                        if (success.IsSuccess)
-                        {
-                            sendedItems = sendedItems.Where(x => success.Value.InsertedLocalIdArr.Contains(x.Id)).ToList();
+                        //if (success.IsSuccess)
+                        //{
+                        //    sendedItems = sendedItems.Where(x => success.Value.InsertedLocalIdArr.Contains(x.Id)).ToList();
 
-                            await _databaseService.DeleteQrCodeRecordsAsync(sendedItems);
+                        //    await _databaseService.DeleteQrCodeRecordsAsync(sendedItems);
 
-                        }
+                        //}
                     }
                     catch (Exception)
                     {
@@ -437,6 +426,8 @@ public partial class AppShellViewModel : BaseViewModel
         await UpdateRecordsCountAsync();
         await UpdateStudentsCountAsync();
         await UpdateCentersCountAsync();
+        await UpdateGroupsCountAsync();
+        await UpdateExamsCountAsync();
     }
 
     // Command to navigate to main page

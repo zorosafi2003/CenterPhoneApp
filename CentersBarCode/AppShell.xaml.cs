@@ -18,14 +18,15 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("MainPage", typeof(MainPage));
         Routing.RegisterRoute("LoginPage", typeof(LoginPage));
         Routing.RegisterRoute("RecordsPage", typeof(RecordsPage));
-        Routing.RegisterRoute("AttachCardPage", typeof(AttachCardPage));
+        Routing.RegisterRoute("ExamRecordsPage", typeof(ExamRecordsPage));
         Routing.RegisterRoute("ManualAddPage", typeof(ManualAddPage));
+        Routing.RegisterRoute("ExamDutiesPage", typeof(ExamDutiesPage));
         
         // Subscribe to property changes to handle authentication state changes
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         
         System.Diagnostics.Debug.WriteLine($"AppShell initialized. ShowFlyoutItems: {_viewModel.ShowFlyoutItems}");
-        System.Diagnostics.Debug.WriteLine($"Registered routes: MainPage, LoginPage, RecordsPage, AttachCardPage, ManualAddPage");
+        System.Diagnostics.Debug.WriteLine($"Registered routes: MainPage, LoginPage, RecordsPage, ExamRecordsPage, AttachCardPage, ManualAddPage, ExamDutiesPage");
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -87,6 +88,8 @@ public partial class AppShell : Shell
         await _viewModel.UpdateRecordsCountAsync();
         await _viewModel.UpdateStudentsCountAsync();
         await _viewModel.UpdateCentersCountAsync();
+        await _viewModel.UpdateGroupsCountAsync();
+        await _viewModel.UpdateExamsCountAsync();
         
         // Ensure we have a proper current item set
         EnsureCurrentItemIsSet();
@@ -161,6 +164,8 @@ public partial class AppShell : Shell
         await _viewModel.UpdateRecordsCountAsync();
         await _viewModel.UpdateStudentsCountAsync();
         await _viewModel.UpdateCentersCountAsync();
+        await _viewModel.UpdateGroupsCountAsync();
+        await _viewModel.UpdateExamsCountAsync();
     }
 
     // Navigation event handlers for custom flyout buttons
@@ -192,17 +197,17 @@ public partial class AppShell : Shell
         }
     }
 
-    private async void OnAttachCardClicked(object sender, EventArgs e)
+    private async void OnExamDutiesClicked(object sender, EventArgs e)
     {
         try
         {
-            System.Diagnostics.Debug.WriteLine("OnAttachCardClicked called");
-            await NavigateToPageSafely("//AttachCardPage");
+            System.Diagnostics.Debug.WriteLine("OnExamDutiesClicked called");
+            await NavigateToPageSafely("//ExamDutiesPage");
             FlyoutIsPresented = false; // Close the flyout
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error in OnAttachCardClicked: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error in OnExamDutiesClicked: {ex.Message}");
         }
     }
     
@@ -231,6 +236,20 @@ public partial class AppShell : Shell
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error in OnRecordsClicked: {ex.Message}");
+        }
+    }
+
+    private async void OnExamRecordsClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("OnExamRecordsClicked called");
+            await NavigateToPageSafely("//ExamRecordsPage");
+            FlyoutIsPresented = false; // Close the flyout
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error in OnExamRecordsClicked: {ex.Message}");
         }
     }
 }

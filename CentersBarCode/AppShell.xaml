@@ -38,7 +38,7 @@
                     VerticalOptions="Fill">
                     <!--  Header Section  -->
                     <Grid
-                        Padding="20,40,20,20"
+                        Padding="20,20,20,20"
                         BackgroundColor="Transparent"
                         HeightRequest="180"
                         IsVisible="{Binding IsAuthenticated}">
@@ -55,7 +55,7 @@
                                 Margin="0,0,0,8"
                                 FontAttributes="Bold"
                                 FontSize="22"
-                                Text="Centers Barcode"
+                                Text="{Binding AppVersion, StringFormat='Centers Barcode V{0}'}"
                                 TextColor="White" />
 
                             <!--  User Email with subtle styling  -->
@@ -113,27 +113,6 @@
                                         </StackLayout>
                                     </Frame>
 
-                                    <!--  Records Badge  -->
-                                    <Frame
-                                        Padding="8,4"
-                                        BackgroundColor="#FFD700"
-                                        CornerRadius="12"
-                                        HasShadow="False"
-                                        IsVisible="{Binding HasBadge}">
-                                        <StackLayout Orientation="Horizontal" Spacing="4">
-                                            <Label
-                                                FontSize="8"
-                                                Text="📋"
-                                                VerticalOptions="Center" />
-                                            <Label
-                                                FontAttributes="Bold"
-                                                FontSize="8"
-                                                Text="{Binding RecordsCount, StringFormat='{0} Records'}"
-                                                TextColor="#1A1A1A"
-                                                VerticalOptions="Center" />
-                                        </StackLayout>
-                                    </Frame>
-
                                     <!--  Students Badge  -->
                                     <Frame
                                         Padding="8,4"
@@ -156,7 +135,81 @@
                                         </StackLayout>
                                     </Frame>
 
+                                    <!--  Groups Badge  -->
+                                    <Frame
+                                        Padding="8,4"
+                                        BackgroundColor="#17A2B8"
+                                        CornerRadius="12"
+                                        HasShadow="False"
+                                        IsVisible="{Binding HasGroupsBadge}">
+                                        <StackLayout Orientation="Horizontal" Spacing="4">
+                                            <Label
+                                                FontSize="8"
+                                                Text="📚"
+                                                TextColor="White"
+                                                VerticalOptions="Center" />
+                                            <Label
+                                                FontAttributes="Bold"
+                                                FontSize="8"
+                                                Text="{Binding GroupsCount, StringFormat='{0} Groups'}"
+                                                TextColor="White"
+                                                VerticalOptions="Center" />
+                                        </StackLayout>
+                                    </Frame>
+
                                 </StackLayout>
+
+                                <StackLayout
+                                    Margin="0,5,0,0"
+                                    HorizontalOptions="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="2">
+
+                                    <!--  Records Badge  -->
+                                    <Frame
+        Padding="8,4"
+        BackgroundColor="#FFD700"
+        CornerRadius="12"
+        HasShadow="False"
+        IsVisible="{Binding HasBadge}">
+                                        <StackLayout Orientation="Horizontal" Spacing="4">
+                                            <Label
+                FontSize="8"
+                Text="📋"
+                VerticalOptions="Center" />
+                                            <Label
+                FontAttributes="Bold"
+                FontSize="8"
+                Text="{Binding RecordsCount, StringFormat='{0} Records'}"
+                TextColor="#1A1A1A"
+                VerticalOptions="Center" />
+                                        </StackLayout>
+                                    </Frame>
+
+                                    <!--  Exams Badge  -->
+                                    <Frame
+        Padding="8,4"
+        BackgroundColor="#FD7E14"
+        CornerRadius="12"
+        HasShadow="False"
+        IsVisible="{Binding HasExamsBadge}">
+                                        <StackLayout Orientation="Horizontal" Spacing="4">
+                                            <Label
+                FontSize="8"
+                Text="📝"
+                TextColor="White"
+                VerticalOptions="Center" />
+                                            <Label
+                FontAttributes="Bold"
+                FontSize="8"
+                Text="{Binding ExamsCount, StringFormat='{0} Exams'}"
+                TextColor="White"
+                VerticalOptions="Center" />
+                                        </StackLayout>
+                                    </Frame>
+
+                                </StackLayout>
+
                             </StackLayout>
                         </StackLayout>
                     </Grid>
@@ -195,21 +248,20 @@
                                 Text="🏠 Main"
                                 TextColor="#343A40" />
 
-                            <!--  Attach Card Page  -->
+                            <!--  Exam and Duties Page  - MODIFIED  -->
                             <Button
                                 BackgroundColor="White"
                                 BorderColor="#E9ECEF"
                                 BorderWidth="1"
-                                Clicked="OnAttachCardClicked"
-                                Command="{Binding NavigateToAttachCardCommand}"
+                                Clicked="OnExamDutiesClicked"
                                 CornerRadius="12"
                                 FontAttributes="Bold"
                                 FontSize="16"
                                 HeightRequest="50"
-                                Text="📱 Attach Card"
+                                Text="📝 Exam and Duties"
                                 TextColor="#343A40" />
 
-                            <!--  Manual Attendance Page - NEW  -->
+                            <!--  Manual Attendance Page  -->
                             <Button
                                 BackgroundColor="White"
                                 BorderColor="#E9ECEF"
@@ -223,8 +275,10 @@
                                 Text="✏️ Manual Attendance"
                                 TextColor="#343A40" />
 
-                            <!--  Records Page  -->
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Padding="0,0,0,20">
+                                <!--  Records Page  -->
                             <Button
+                                   Grid.Column="0"
                                 BackgroundColor="White"
                                 BorderColor="#E9ECEF"
                                 BorderWidth="1"
@@ -232,43 +286,59 @@
                                 Command="{Binding NavigateToRecordsCommand}"
                                 CornerRadius="12"
                                 FontAttributes="Bold"
-                                FontSize="16"
+                                FontSize="12"
                                 HeightRequest="50"
                                 Text="📄 Records"
                                 TextColor="#343A40" />
 
-                            <!--  Import Centers Button  -->
+                            <!--  Exam Records Page  -->
                             <Button
-                              BackgroundColor="#6F42C1"
-                              BorderColor="#5A2D91"
-                              BorderWidth="1"
-                              Command="{Binding AutoImportDataCommand}"
-                              CornerRadius="12"
-                              FontAttributes="Bold"
-                              FontSize="16"
-                              HeightRequest="50"
-                              ImageSource="import_icon.png"
-                              IsEnabled="{Binding IsAutoImporting, Converter={x:Static converters:InverseBoolConverter.Instance}}"
-                              Text="Import Data"
-                              TextColor="White" />
+                                   Grid.Column="1"
+                                BackgroundColor="White"
+                                BorderColor="#E9ECEF"
+                                BorderWidth="1"
+                                Clicked="OnExamRecordsClicked"
+                                CornerRadius="12"
+                                FontAttributes="Bold"
+                                FontSize="12"
+                                HeightRequest="50"
+                                Text="📝 Exams"
+                                TextColor="#343A40" />
+                            </Grid>
+                            <!--  Import and Export Buttons in Same Row  -->
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <!--  Import Data Button  -->
+                                <Button
+                                    Grid.Column="0"
+                                    BackgroundColor="#6F42C1"
+                                    BorderColor="#5A2D91"
+                                    BorderWidth="1"
+                                    Command="{Binding AutoImportDataCommand}"
+                                    CornerRadius="12"
+                                    FontAttributes="Bold"
+                                    FontSize="14"
+                                    HeightRequest="50"
+                                    ImageSource="import_icon.png"
+                                    IsEnabled="{Binding IsAutoImporting, Converter={x:Static converters:InverseBoolConverter.Instance}}"
+                                    Text="Import"
+                                    TextColor="White" />
 
-                            <!--  Import Students Button  -->
-                            <Button
-                              BackgroundColor="#28A745"
-                              BorderColor="#1E7E34"
-                              BorderWidth="1"
-                              Command="{Binding AutoExportDataCommand}"
-                              CornerRadius="12"
-                              FontAttributes="Bold"
-                              FontSize="16"
-                              HeightRequest="50"
-                              ImageSource="export_icon.png"
-                              IsEnabled="{Binding IsAutoExporting, Converter={x:Static converters:InverseBoolConverter.Instance}}"
-                              Text="Export Data"
-                              TextColor="White" />          
-
-
-
+                                <!--  Export Data Button  -->
+                                <Button
+                                    Grid.Column="1"
+                                    BackgroundColor="#28A745"
+                                    BorderColor="#1E7E34"
+                                    BorderWidth="1"
+                                    Command="{Binding AutoExportDataCommand}"
+                                    CornerRadius="12"
+                                    FontAttributes="Bold"
+                                    FontSize="14"
+                                    HeightRequest="50"
+                                    ImageSource="export_icon.png"
+                                    IsEnabled="{Binding IsAutoExporting, Converter={x:Static converters:InverseBoolConverter.Instance}}"
+                                    Text="Export"
+                                    TextColor="White" />
+                            </Grid>
 
                         </StackLayout>
                     </StackLayout>
@@ -348,10 +418,10 @@
     </FlyoutItem>
 
     <FlyoutItem
-        Title="Attach Card"
+        Title="Exam and Duties"
         IsVisible="{Binding IsAuthenticated}"
-        Route="AttachCardPage">
-        <ShellContent Title="Attach Card" ContentTemplate="{DataTemplate views:AttachCardPage}" />
+        Route="ExamDutiesPage">
+        <ShellContent Title="Exam and Duties" ContentTemplate="{DataTemplate views:ExamDutiesPage}" />
     </FlyoutItem>
     
     <FlyoutItem
@@ -366,5 +436,12 @@
         IsVisible="{Binding IsAuthenticated}"
         Route="RecordsPage">
         <ShellContent Title="Records" ContentTemplate="{DataTemplate views:RecordsPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem
+        Title="Exam Records"
+        IsVisible="{Binding IsAuthenticated}"
+        Route="ExamRecordsPage">
+        <ShellContent Title="Exam Records" ContentTemplate="{DataTemplate views:ExamRecordsPage}" />
     </FlyoutItem>
 </Shell>

@@ -1,10 +1,6 @@
 {
-  "BaseUrl": "http://api.teachers-eg.com",
-  "GetStudentsEndpoint": "/centers-api/students/list",
-  "GetStudentByPhoneEndpoint": "/centers-api/students/by-phone",
-  "GetStudentByCodeEndpoint": "/centers-api/students/by-code",
-  "SetStudentAttendanceEndpoint": "/centers-api/student-attendances/create-range",
-  "AttachStudentToCodeEndpoint": "/centers-api/students/update-code",
-  "GetCentersEndpoint": "/centers-api/centers/list",
+  "BaseUrl": "https://znsb2ww9-44344.uks1.devtunnels.ms/",
+  "ImportDataEndpoint": "/centers-api/phone-app/data",
+  "ExportDataEndPoint": "/centers-api/phone-app/data",
   "AuthenticationEndpoint": "/auth/login"
 }

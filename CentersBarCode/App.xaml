@@ -12,7 +12,6 @@
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <converters:IsMainViewModelConverter x:Key="IsMainViewModel" />
-            <converters:IsAttachCardViewModelConverter x:Key="IsAttachCardViewModel" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

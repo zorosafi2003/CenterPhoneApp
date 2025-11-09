@@ -213,20 +213,13 @@ public partial class ManualAddViewModel : BaseViewModel
             }
 
             // Create QR code record - need to convert center ID string to Guid
-            Guid centerGuid;
-            if (!Guid.TryParse(SelectedCenter.Id, out centerGuid))
-            {
-                // If the center ID is not a valid GUID, create a new one based on the string
-                centerGuid = Guid.NewGuid();
-                System.Diagnostics.Debug.WriteLine($"Created new GUID {centerGuid} for center ID {SelectedCenter.Id}");
-            }
+            Guid centerGuid = SelectedCenter.Id;
 
             var qrRecord = new QrCodeRecord(
                 centerId: centerGuid,
-                code: SelectedStudent.StudentCode
-            )
+                code: SelectedStudent.StudentCode)
             {
-                StudentId = SelectedStudent.StudentId,
+                StudentId = SelectedStudent.Id,
                 StudentName = SelectedStudent.StudentName
             };
 

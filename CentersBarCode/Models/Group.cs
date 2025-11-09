@@ -2,8 +2,8 @@ using SQLite;
 
 namespace CentersBarCode.Models;
 
-[Table("Centers")]
-public class Center
+[Table("Groups")]
+public class Group
 {
     [PrimaryKey]
     public Guid Id { get; set; } 
@@ -12,17 +12,14 @@ public class Center
     
     public DateTime CreatedOn { get; set; }
 
-
-    public Center()
-    {
+    public Group() { 
         CreatedOn = DateTime.Now;
     }
-
-    public Center(Guid id, string name) 
+    public Group(Guid id, string name)
     {
-        CreatedOn = DateTime.Now;
         Id = id;
         Name = name;
+        CreatedOn = DateTime.Now;
     }
 
     public override string ToString()
@@ -32,7 +29,7 @@ public class Center
 }
 
 // DTO for Centers API response
-public class CenterApiResponse
+public class GroupApiResponse
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

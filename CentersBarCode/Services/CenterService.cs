@@ -5,10 +5,9 @@ namespace CentersBarCode.Services;
 
 public interface ICenterService
 {
-    Task<bool> ImportCentersAsync(string bearerToken);
+    Task<bool> ImportDataAsync(string bearerToken);
     Task<List<Center>> GetAllCentersAsync();
     Task<int> GetCentersCountAsync();
-    Task ClearAllCentersAsync();
 }
 
 public class CenterService : ICenterService
@@ -24,54 +23,48 @@ public class CenterService : ICenterService
         _logger = logger;
     }
 
-    public async Task<bool> ImportCentersAsync(string bearerToken)
+    public async Task<bool> ImportDataAsync(string bearerToken)
     {
         try
         {
             _logger.LogInformation("Starting centers import process");
 
             // 1. Fetch centers from API
-            var centersFromApi = await _apiService.GetCentersAsync(bearerToken);
+            var importDataAsyncResult = await _apiService.ImportDataAsync(bearerToken);
             
-            if (centersFromApi == null || !centersFromApi.Any())
+            if (importDataAsyncResult == null )
             {
-                _logger.LogWarning("No centers received from API");
+                _logger.LogWarning("No data received from API");
                 return false;
             }
 
-            _logger.LogInformation("Received {Count} centers from API", centersFromApi.Count);
-
             // 2. Clear existing centers table
-            await ClearAllCentersAsync();
-            _logger.LogInformation("Cleared existing centers from database");
+            await _databaseService.ClearAllCentersAsync();
+            await _databaseService.ClearAllStudentsAsync();
+            await _databaseService.ClearAllGroupsAsync();
 
             // 3. Convert API response to Center entities
-            var centers = centersFromApi.Select(apiCenter => new Center
+            var centers = importDataAsyncResult.Centers.Select(x => new Center(x.Id, x.Name)).ToList();
+            await _databaseService.SaveAllCenterAsync(centers);
+
+            var groups = importDataAsyncResult.Groups.Select(x => new Group(x.Id, x.Name)).ToList();
+            await _databaseService.SaveAllGroupsAsync(groups);
+
+            var students = importDataAsyncResult.Students.Select(x => new Student()
             {
-                Id = apiCenter.Id,
-                Name = apiCenter.Name,
-                CreatedOn = DateTime.UtcNow
+                Id = x.Id,
+                StudentName = x.FullName,
+               PhoneNumber = x.Phone,
+                ParentPhone1 = x.ParentPhone1,
+                StudentGroupId = x.GroupId,
+                StudentGroupName = x.GroupName,
+                StudentCode = x.Code,
+                LastAttendance = x.LastAttendance,
+                PaymentValue = x.PaymentValue
             }).ToList();
+             await _databaseService.SaveAllStudentsAsync(students);
 
-            // 4. Save all centers to database
-            int savedCount = 0;
-            foreach (var center in centers)
-            {
-                try
-                {
-                    await _databaseService.SaveCenterAsync(center);
-                    savedCount++;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to save center: {CenterId}", center.Id);
-                }
-            }
-
-            _logger.LogInformation("Successfully imported {SavedCount} out of {TotalCount} centers", 
-                savedCount, centers.Count);
-
-            return savedCount > 0;
+            return true;
         }
         catch (Exception ex)
         {
@@ -107,18 +100,5 @@ public class CenterService : ICenterService
         }
     }
 
-    public async Task ClearAllCentersAsync()
-    {
-        try
-        {
-            await _databaseService.ClearAllCentersAsync();
-            _logger.LogInformation("Cleared all centers from database");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error clearing centers");
-            throw;
-        }
-    }
 
 }

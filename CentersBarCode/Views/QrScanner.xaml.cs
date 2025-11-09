@@ -16,7 +16,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
 {
     private readonly object _viewModel; // Generic object to hold either ViewModel
     private readonly MainViewModel? _mainViewModel;
-    private readonly AttachCardViewModel? _attachCardViewModel;
     private bool _isFlashOn = false;
     private bool _isProcessingBarcode = false; // Flag to prevent multiple processing
 
@@ -60,24 +59,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
 
         // Update visibility of auto scan elements based on current mode
         UpdateAutoScanElementsVisibility();
-
-        RequestCameraPermissions();
-    }
-
-    public QrScanner(AttachCardViewModel viewModel)
-    {
-        InitializeComponent();
-        _viewModel = viewModel;
-        _attachCardViewModel = viewModel;
-
-        // Set grid binding context
-        qrScannerGrid.BindingContext = _attachCardViewModel;
-
-        // Hide auto scan elements when using AttachCardViewModel
-        autoScanFrame.IsVisible = false;
-        lastScannedLabel.IsVisible = false;
-
-        System.Diagnostics.Debug.WriteLine("QrScanner constructed with AttachCardViewModel");
 
         RequestCameraPermissions();
     }
@@ -147,7 +128,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
 
         // Clean up code but avoid making API calls that might not be supported
         if (_mainViewModel != null) _mainViewModel.IsCameraInitialized = false;
-        if (_attachCardViewModel != null) _attachCardViewModel.IsCameraInitialized = false;
     }
 
     private async void RequestCameraPermissions()
@@ -164,7 +144,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
             System.Diagnostics.Debug.WriteLine("Camera permission denied");
             await DisplayAlert("Permission Denied", "Camera permission is required to scan QR codes.", "OK");
             if (_mainViewModel != null) _mainViewModel.IsQrScannerVisible = false;
-            if (_attachCardViewModel != null) _attachCardViewModel.IsQrScannerVisible = false;
         }
         else
         {
@@ -186,7 +165,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                     System.Diagnostics.Debug.WriteLine("Camera permission denied during initialization");
                     await DisplayAlert("Permission Denied", "Camera permission is required to scan QR codes.", "OK");
                     if (_mainViewModel != null) _mainViewModel.IsQrScannerVisible = false;
-                    if (_attachCardViewModel != null) _attachCardViewModel.IsQrScannerVisible = false;
                     return;
                 }
             }
@@ -198,7 +176,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
             System.Diagnostics.Debug.WriteLine($"Error checking permissions or initializing camera: {ex.Message}");
             await DisplayAlert("Camera Error", $"An error occurred initializing the camera: {ex.Message}", "OK");
             if (_mainViewModel != null) _mainViewModel.IsQrScannerVisible = false;
-            if (_attachCardViewModel != null) _attachCardViewModel.IsQrScannerVisible = false;
         }
     }
 
@@ -223,7 +200,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
 
             // Set view model camera state
             if (_mainViewModel != null) _mainViewModel.IsCameraInitialized = true;
-            if (_attachCardViewModel != null) _attachCardViewModel.IsCameraInitialized = true;
 
             System.Diagnostics.Debug.WriteLine("Camera initialized successfully for QrScanner");
         }
@@ -231,10 +207,9 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
         {
             System.Diagnostics.Debug.WriteLine($"Camera initialization error: {ex.Message}");
             if (_mainViewModel != null) _mainViewModel.IsCameraInitialized = false;
-            if (_attachCardViewModel != null) _attachCardViewModel.IsCameraInitialized = false;
+
             await DisplayAlert("Camera Error", $"Failed to initialize camera: {ex.Message}", "OK");
             if (_mainViewModel != null) _mainViewModel.IsQrScannerVisible = false;
-            if (_attachCardViewModel != null) _attachCardViewModel.IsQrScannerVisible = false;
         }
     }
 
@@ -247,8 +222,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
             return;
         }
 
-        if ((_mainViewModel != null && !_mainViewModel.IsQrScannerVisible) ||
-            (_attachCardViewModel != null && !_attachCardViewModel.IsQrScannerVisible))
+        if (_mainViewModel != null && !_mainViewModel.IsQrScannerVisible)
         {
             System.Diagnostics.Debug.WriteLine("Barcode detection skipped: Scanner not visible");
             return;
@@ -265,7 +239,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
 
                 // Process the detected barcode
                 var currentBarcode = e.BarcodeResults?
-                .Where(x => x.BarcodeFormat == BarcodeFormats.Code128 || x.BarcodeFormat == BarcodeFormats.Ean8).FirstOrDefault();
+                .Where(x => x.BarcodeFormat == BarcodeFormats.Code128 || x.BarcodeFormat == BarcodeFormats.Ean8 || x.BarcodeFormat == BarcodeFormats.QRCode).FirstOrDefault();
 
                 if (currentBarcode != null)
                 {
@@ -298,7 +272,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                         if (student != null)
                                         {
                                             _mainViewModel.StudentName = student.StudentName;
-                                            _mainViewModel.GroupName = student.StudentGroup;
+                                            _mainViewModel.GroupName = student.StudentGroupName;
                                         }
                                         else
                                         {
@@ -338,7 +312,7 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                         {
                                             // Handle save failure
                                             System.Diagnostics.Debug.WriteLine("Failed to auto-save barcode");
-                                            await DisplayAlert("Save Error", "Failed to save barcode", "OK");
+                                          
                                             _isProcessingBarcode = false;
                                         }
                                     }
@@ -374,37 +348,6 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                             System.Diagnostics.Debug.WriteLine($"Navigation error after barcode scan: {ex.Message}");
                                             await DisplayAlert("Navigation Error", $"Failed to return to previous page: {ex.Message}", "OK");
                                         }
-                                    }
-                                }
-                                else if (_attachCardViewModel != null)
-                                {
-                                    await _attachCardViewModel.ProcessScannedQrCodeAsync(resultText ?? string.Empty, _attachCardViewModel.StudentId ?? Guid.Empty);
-                                    _attachCardViewModel.IsQrScannerVisible = false;
-
-                                    try
-                                    {
-                                        Vibration.Default.Vibrate();
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"Vibration error: {ex.Message}");
-                                    }
-
-                                    if (_attachCardViewModel != null)
-                                    {
-                                        _attachCardViewModel.IsCameraInitialized = false;
-                                    }
-
-                                    // Navigate back to the calling page
-                                    try
-                                    {
-                                        await Navigation.PopAsync();
-                                        System.Diagnostics.Debug.WriteLine("Navigated back to AttachCardPage after barcode scan");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"Navigation error after barcode scan: {ex.Message}");
-                                        await DisplayAlert("Navigation Error", $"Failed to return to previous page: {ex.Message}", "OK");
                                     }
                                 }
                             }

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CentersBarCode.Views.ExamDutiesPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:CentersBarCode.ViewModels"
+    xmlns:converters="clr-namespace:CentersBarCode.Converters"
+    Title="Exam and Duties"
+    x:DataType="vm:ExamDutiesViewModel"
+    BackgroundColor="#F8F9FA">
+
+    <ScrollView>
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="16" Padding="20">
+            <!-- Header Section -->
+            <VerticalStackLayout Grid.Row="0" Spacing="16">
+                <!-- Teacher Name -->
+                <HorizontalStackLayout HorizontalOptions="Start">
+                    <Label
+                        Text="Teacher: "
+                        FontAttributes="Bold"
+                        TextColor="#343A40" />
+                    <Label
+                        Text="{Binding TeacherName}"
+                        TextColor="#6C757D" />
+                </HorizontalStackLayout>
+
+                <!-- Total Degree Input -->
+                <VerticalStackLayout Spacing="8">
+                    <Label
+                        Text="Total Degree:"
+                        FontAttributes="Bold"
+                        TextColor="#343A40" />
+                    <Border
+                        Stroke="#DEE2E6"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12,12,12,12">
+                        <Entry
+                            Placeholder="Enter total degree"
+                            Text="{Binding TotalDegree}"
+                            Keyboard="Numeric"
+                            HeightRequest="50"
+                            BackgroundColor="White"
+                            Margin="10,0" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Search Input and Button in Same Row -->
+                <VerticalStackLayout Spacing="8">
+                    <Label
+                        Text="Search Student:"
+                        FontAttributes="Bold"
+                        TextColor="#343A40" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Border
+                            Grid.Column="0"
+                            Stroke="#DEE2E6"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 12,12,12,12">
+                            <Entry
+                                x:Name="SearchEntry"
+                                Placeholder="Enter phone or code"
+                                Text="{Binding SearchText}"
+                                HeightRequest="50"
+                                BackgroundColor="White"
+                                Margin="10,0" />
+                        </Border>
+                        <Button
+                            Grid.Column="1"
+                            Text="Search"
+                            Command="{Binding SearchCommand}"
+                            HeightRequest="50"
+                            WidthRequest="100"
+                            BackgroundColor="#007BFF"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="12" />
+                    </Grid>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator
+                Grid.Row="1"
+                IsRunning="{Binding IsSearching}"
+                IsVisible="{Binding IsSearching}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Color="#007BFF" />
+
+            <!-- Student Details and Form Section -->
+            <VerticalStackLayout 
+                Grid.Row="2" 
+                Spacing="16" 
+                IsVisible="{Binding IsStudentFound}">
+                
+                <!-- Student Name Display -->
+                <Border
+                    Stroke="#28A745"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 12,12,12,12"
+                    BackgroundColor="White"
+                    Padding="16">
+                    <VerticalStackLayout Spacing="8">
+                        <Label
+                            Text="Student Name:"
+                            FontAttributes="Bold"
+                            TextColor="#343A40"
+                            FontSize="14" />
+                        <Label
+                            Text="{Binding StudentName}"
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            TextColor="#28A745" />
+                        <HorizontalStackLayout Spacing="8">
+                            <Label
+                                Text="Code:"
+                                FontAttributes="Bold"
+                                TextColor="#6C757D"
+                                FontSize="12" />
+                            <Label
+                                Text="{Binding StudentCode}"
+                                TextColor="#6C757D"
+                                FontSize="12" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Degree Input -->
+                <VerticalStackLayout Spacing="8">
+                    <Label
+                        Text="Degree:"
+                        FontAttributes="Bold"
+                        TextColor="#343A40" />
+                    <Border
+                        Stroke="#DEE2E6"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12,12,12,12">
+                        <Entry
+                            Placeholder="Enter degree"
+                            Text="{Binding Degree}"
+                            Keyboard="Numeric"
+                            HeightRequest="50"
+                            BackgroundColor="White"
+                            Margin="10,0" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Notes Input -->
+                <VerticalStackLayout Spacing="8">
+                    <Label
+                        Text="Notes:"
+                        FontAttributes="Bold"
+                        TextColor="#343A40" />
+                    <Border
+                        Stroke="#DEE2E6"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12,12,12,12">
+                        <Editor
+                            Placeholder="Enter notes (optional)"
+                            Text="{Binding Notes}"
+                            HeightRequest="100"
+                            BackgroundColor="White"
+                            Margin="10,5"
+                            AutoSize="TextChanges" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Not Have Duties Checkbox -->
+                <HorizontalStackLayout Spacing="12">
+                    <CheckBox
+                        IsChecked="{Binding NotHaveDuties}"
+                        Color="#DC3545" />
+                    <Label
+                        Text="Not Have Duties"
+                        FontAttributes="Bold"
+                        TextColor="#DC3545"
+                        VerticalOptions="Center" />
+                </HorizontalStackLayout>
+
+                <!-- Action Buttons -->
+                <VerticalStackLayout Spacing="12">
+                    <!-- Save Button (shown when creating new record) -->
+                    <Button
+                        Text="Save"
+                        Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding CanSave}"
+                        IsVisible="{Binding IsEditMode, Converter={x:Static converters:InverseBoolConverter.Instance}}"
+                        BackgroundColor="#28A745"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="12"
+                        HeightRequest="50" />
+
+                    <!-- Update and Delete Buttons (shown when editing existing record) -->
+                    <Grid 
+                        ColumnDefinitions="*,Auto" 
+                        ColumnSpacing="12"
+                        IsVisible="{Binding IsEditMode}">
+                        <Button
+                            Grid.Column="0"
+                            Text="Update"
+                            Command="{Binding UpdateCommand}"
+                            IsEnabled="{Binding CanSave}"
+                            BackgroundColor="#FFC107"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="12"
+                            HeightRequest="50" />
+                        <Button
+                            Grid.Column="1"
+                            Text="Delete"
+                            Command="{Binding DeleteCommand}"
+                            BackgroundColor="#DC3545"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            WidthRequest="100" />
+                    </Grid>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+</ContentPage>

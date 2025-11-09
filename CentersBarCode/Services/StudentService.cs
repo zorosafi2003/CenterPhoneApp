@@ -5,7 +5,6 @@ namespace CentersBarCode.Services;
 
 public interface IStudentService
 {
-    Task<bool> ImportStudentsAsync(string bearerToken);
     Task<List<Student>> GetAllStudentsAsync();
     Task<int> GetStudentsCountAsync();
     Task ClearAllStudentsAsync();
@@ -25,54 +24,6 @@ public class StudentService : IStudentService
         _logger = logger;
     }
 
-    public async Task<bool> ImportStudentsAsync(string bearerToken)
-    {
-        try
-        {
-            _logger.LogInformation("Starting student import process");
-
-            // 1. Fetch students from API
-            var studentsFromApi = await _apiService.GetStudentsAsync(bearerToken);
-
-            if (studentsFromApi == null || !studentsFromApi.Any())
-            {
-                _logger.LogWarning("No students received from API");
-                return false;
-            }
-
-            _logger.LogInformation("Received {Count} students from API", studentsFromApi.Count);
-
-            // 2. Clear existing students table
-            await ClearAllStudentsAsync();
-            _logger.LogInformation("Cleared existing students from database");
-
-            // 3. Convert API response to Student entities
-            var students = studentsFromApi.Select(apiStudent => new Student
-            {
-                StudentId = apiStudent.Id,
-                StudentCode = apiStudent.Code,
-                StudentName = apiStudent.FullName,
-                StudentGroup = apiStudent.GroupName,
-                PhoneNumber = apiStudent.PhoneNumber,
-                ParentPhone1 = apiStudent.ParentPhone1,
-                ParentPhone2 = apiStudent.ParentPhone2,
-                CreatedOn = DateTime.UtcNow
-            }).ToList();
-
-            // 4. Save all students to database
-            await _databaseService.SaveStudentsAsync(students);
-
-            _logger.LogInformation("Successfully imported {SavedCount} out of {TotalCount} students",
-                students.Count, students.Count);
-
-            return students.Count > 0;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during student import process");
-            throw;
-        }
-    }
 
     public async Task<List<Student>> GetAllStudentsAsync()
     {

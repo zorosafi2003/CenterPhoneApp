@@ -12,6 +12,9 @@ public partial class MainViewModel : BaseViewModel
     private ObservableCollection<Center> _centers;
 
     [ObservableProperty]
+    private ObservableCollection<Group> _groups;
+
+    [ObservableProperty]
     private string _studentName = string.Empty;
 
     [ObservableProperty]
@@ -22,6 +25,9 @@ public partial class MainViewModel : BaseViewModel
 
     [ObservableProperty]
     private Center? _selectedCenter;
+
+    [ObservableProperty]
+    private Group? _selectedGroup;
 
     [ObservableProperty]
     private bool _isQrScannerVisible;
@@ -65,9 +71,9 @@ public partial class MainViewModel : BaseViewModel
         _centerService = centerService;
         _authenticationService = authenticationService;
 
-
-        // Initialize empty centers list - will be populated from database
+        // Initialize empty centers and groups list - will be populated from database
         Centers = new ObservableCollection<Center>();
+        Groups = new ObservableCollection<Group>();
 
         StudentName = string.Empty;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
@@ -84,7 +90,7 @@ public partial class MainViewModel : BaseViewModel
         AutoScanCount = 0;
         ShowAutoScanCounter = false;
 
-        // Initialize database and load centers
+        // Initialize database and load centers and groups
         InitializeAsync();
     }
 
@@ -95,8 +101,9 @@ public partial class MainViewModel : BaseViewModel
             await _databaseService.InitializeAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
 
-            // Load centers from database
+            // Load centers and groups from database
             await LoadCentersAsync();
+            await LoadGroupsAsync();
         }
         catch (Exception ex)
         {
@@ -121,6 +128,30 @@ public partial class MainViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error loading centers: {ex.Message}");
+        }
+    }
+
+    private async Task LoadGroupsAsync()
+    {
+        try
+        {
+            var groupsFromDb = await _databaseService.GetAllGroupsAsync();
+
+            Groups.Clear();
+
+            // Add "None" option to clear group filter
+            Groups.Add(new Group(Guid.Empty, "None"));
+
+            foreach (var group in groupsFromDb)
+            {
+                Groups.Add(group);
+            }
+
+            System.Diagnostics.Debug.WriteLine($"Loaded {Groups.Count - 1} groups (plus None option)");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading groups: {ex.Message}");
         }
     }
 
@@ -194,20 +225,33 @@ public partial class MainViewModel : BaseViewModel
             // Look up student info by code first
             var student = await _databaseService.GetStudentByCodeAsync(code);
 
+            // If a group is selected (not None), check if student belongs to that group
+            if (SelectedGroup != null && SelectedGroup.Id != Guid.Empty && student != null)
+            {
+                if (student.StudentGroupId != SelectedGroup.Id)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Not Allowed To Add {SelectedGroup.Name}.");
+
+                    await Application.Current.MainPage.DisplayAlert("Save Error", $" مسموح باضافه طلاب مجموعه  {SelectedGroup.Name} فقط .", "OK");
+
+                    return -1; // Return -1 to indicate filtered out by group
+                }
+            }
+
             var qrRecord = new QrCodeRecord(
-                centerId: Guid.Parse(SelectedCenter.Id),
+                centerId: SelectedCenter.Id,
                 code: code
             );
 
             // Add student info if found
             if (student != null)
             {
-                qrRecord.StudentId = student.StudentId;
+                qrRecord.StudentId = student.Id;
                 qrRecord.StudentName = student.StudentName;
             }
 
             // Save to database
-           var saveQrCodeRecordAsyncResult =  await _databaseService.SaveQrCodeRecordAsync(qrRecord);
+            var saveQrCodeRecordAsyncResult = await _databaseService.SaveQrCodeRecordAsync(qrRecord);
 
             if (saveQrCodeRecordAsyncResult != 0)
             {
@@ -229,7 +273,6 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-
     // Direct save QR code without showing popup (for Auto Scan mode)
     public async Task<Student?> GetStudentInfo(string code)
     {
@@ -237,6 +280,17 @@ public partial class MainViewModel : BaseViewModel
         {
             // Look up student info by code first
             var student = await _databaseService.GetStudentByCodeAsync(code);
+
+            // If a group is selected (not None), check if student belongs to that group
+            if (SelectedGroup != null && SelectedGroup.Id != Guid.Empty && student != null)
+            {
+                if (student.StudentGroupId != SelectedGroup.Id)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Student {code} does not belong to selected group {SelectedGroup.Name}. Returning null.");
+                    return null;
+                }
+            }
+
             return student;
         }
         catch (Exception ex)
@@ -266,21 +320,36 @@ public partial class MainViewModel : BaseViewModel
 
             var student = await _databaseService.GetStudentByCodeAsync(ScannedCode);
 
+            // If a group is selected (not None), check if student belongs to that group
+            if (SelectedGroup != null && SelectedGroup.Id != Guid.Empty && student != null)
+            {
+                if (student.StudentGroupId != SelectedGroup.Id)
+                {
+                    if (Application.Current?.MainPage != null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Save Error", $" مسموح باضافه طلاب مجموعه  {SelectedGroup.Name} فقط .", "OK");
+                    }
+
+                    IsPopupVisible = false;
+                    ResetScannedData();
+                    return;
+                }
+            }
+
             var qrRecord = new QrCodeRecord(
-                centerId: Guid.Parse(SelectedCenter.Id),
+                centerId: SelectedCenter.Id,
                 code: ScannedCode
             );
 
             // Add student info if found
             if (student != null)
             {
-                qrRecord.StudentId = student.StudentId;
+                qrRecord.StudentId = student.Id;
                 qrRecord.StudentName = student.StudentName;
             }
 
             // Save to database
             await _databaseService.SaveQrCodeRecordAsync(qrRecord);
-
 
             // Refresh the records badge in AppShell
             await RefreshRecordsBadgeAsync();
@@ -334,6 +403,19 @@ public partial class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(CanScan));
     }
 
+    // Handle group selection changes
+    partial void OnSelectedGroupChanged(Group? value)
+    {
+        if (value != null && value.Id == Guid.Empty)
+        {
+            System.Diagnostics.Debug.WriteLine("'None' option selected - group filter cleared");
+        }
+        else if (value != null)
+        {
+            System.Diagnostics.Debug.WriteLine($"Group selected: {value.Name} (ID: {value.Id})");
+        }
+    }
+
     // Handle camera initialization state change
     partial void OnIsCameraInitializedChanged(bool value)
     {
@@ -360,7 +442,7 @@ public partial class MainViewModel : BaseViewModel
         if (student != null)
         {
             ScannedName = student.StudentName;
-            ScannedGroup = student.StudentGroup;
+            ScannedGroup = student.StudentGroupName;
         }
 
         ScannedCenter = SelectedCenter?.Name ?? string.Empty;
@@ -390,10 +472,11 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-    // Command to refresh centers from database
+    // Command to refresh centers and groups from database
     [RelayCommand]
     private async Task RefreshCentersAsync()
     {
         await LoadCentersAsync();
+        await LoadGroupsAsync();
     }
 }

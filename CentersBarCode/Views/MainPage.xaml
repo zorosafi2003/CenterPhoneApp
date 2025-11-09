@@ -28,6 +28,19 @@
                 ItemsSource="{Binding Centers}"
                 SelectedItem="{Binding SelectedCenter}" />
 
+            <Label
+                FontAttributes="Bold"
+                FontSize="18"
+                Text="Select a Group (Optional)" />
+
+            <!--  Groups Dropdown  -->
+            <Picker
+                Title="Select Group"
+                FontSize="20"
+                HorizontalOptions="FillAndExpand"
+                ItemsSource="{Binding Groups}"
+                SelectedItem="{Binding SelectedGroup}" />
+
             <!--  Scan Buttons  -->
             <Button
                 Command="{Binding OpenQrScannerCommand}"
