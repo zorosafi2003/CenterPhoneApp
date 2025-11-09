@@ -50,27 +50,36 @@
                         Text="Search Student:"
                         FontAttributes="Bold"
                         TextColor="#343A40" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                        <Border
-                            Grid.Column="0"
-                            Stroke="#DEE2E6"
-                            StrokeThickness="1"
-                            StrokeShape="RoundRectangle 12,12,12,12">
-                            <Entry
-                                x:Name="SearchEntry"
-                                Placeholder="Enter phone or code"
-                                Text="{Binding SearchText}"
-                                HeightRequest="50"
-                                BackgroundColor="White"
-                                Margin="10,0" />
-                        </Border>
+                    <Border
+                        Stroke="#DEE2E6"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12,12,12,12">
+                        <Entry
+                            x:Name="SearchEntry"
+                            Placeholder="Enter phone or code"
+                            Text="{Binding SearchText}"
+                            HeightRequest="50"
+                            BackgroundColor="White"
+                            Margin="10,0" />
+                    </Border>
+                    
+                    <!-- Search and Camera Buttons in Same Row -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0">
                         <Button
-                            Grid.Column="1"
+                            Grid.Column="0"
                             Text="Search"
                             Command="{Binding SearchCommand}"
                             HeightRequest="50"
-                            WidthRequest="100"
                             BackgroundColor="#007BFF"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="12" />
+                        <Button
+                            Grid.Column="1"
+                            Text="📷 Camera"
+                            Command="{Binding OpenCameraCommand}"
+                            HeightRequest="50"
+                            BackgroundColor="#28A745"
                             TextColor="White"
                             FontAttributes="Bold"
                             CornerRadius="12" />
@@ -200,7 +209,6 @@
                             Grid.Column="0"
                             Text="Update"
                             Command="{Binding UpdateCommand}"
-                            IsEnabled="{Binding CanSave}"
                             BackgroundColor="#FFC107"
                             TextColor="White"
                             FontAttributes="Bold"

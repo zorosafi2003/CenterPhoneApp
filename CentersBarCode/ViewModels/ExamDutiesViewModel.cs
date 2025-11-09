@@ -6,9 +6,12 @@ public partial class ExamDutiesViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
     private readonly IAuthenticationService _authenticationService;
-    
+
     // Event to notify when search command is executed
     public event Action? SearchCommandExecuted;
+
+    // Event to notify when camera should be opened
+    public event Func<Task>? OpenCameraRequested;
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -76,7 +79,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         CanSave = false;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
         Title = "Exam and Duties";
-        
+
         // Initialize database
         InitializeAsync();
     }
@@ -108,7 +111,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
     private void UpdateCanSave()
     {
         CanSave = IsStudentFound &&
-           ( (!string.IsNullOrWhiteSpace(TotalDegree) && !string.IsNullOrWhiteSpace(Degree) ) || NotHaveDuties == true);
+           ((!string.IsNullOrWhiteSpace(TotalDegree) && !string.IsNullOrWhiteSpace(Degree)) || NotHaveDuties == true);
     }
 
     // Command to perform the search
@@ -117,8 +120,59 @@ public partial class ExamDutiesViewModel : BaseViewModel
     {
         // Notify that the search command is executed (for keyboard dismissal)
         SearchCommandExecuted?.Invoke();
-        
+
         if (string.IsNullOrWhiteSpace(SearchText))
+        {
+            await Application.Current!.MainPage!.DisplayAlert("Error", "Please enter a student code or phone number.", "OK");
+            return;
+        }
+
+        await PerformSearchAsync(SearchText);
+    }
+
+    // Command to open camera for barcode scanning
+    [RelayCommand]
+    private async Task OpenCameraAsync()
+    {
+        try
+        {
+            // Notify that we're opening camera (for keyboard dismissal)
+            SearchCommandExecuted?.Invoke();
+
+            // Request camera permissions
+            var status = await Permissions.CheckStatusAsync<Permissions.Camera>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.Camera>();
+            }
+
+            if (status != PermissionStatus.Granted)
+            {
+                await Application.Current!.MainPage!.DisplayAlert("Permission Denied",
+                    "Camera permission is required to scan barcodes.", "OK");
+                return;
+            }
+
+            // Trigger the camera opening event
+            if (OpenCameraRequested != null)
+            {
+                await OpenCameraRequested.Invoke();
+            }
+
+            System.Diagnostics.Debug.WriteLine("Camera opened for barcode scanning in ExamDuties");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error opening camera: {ex.Message}");
+            await Application.Current!.MainPage!.DisplayAlert("Error",
+                $"Failed to open camera: {ex.Message}", "OK");
+        }
+    }
+
+    // Helper method to perform search (extracted for reuse)
+    private async Task PerformSearchAsync(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
         {
             await Application.Current!.MainPage!.DisplayAlert("Error", "Please enter a student code or phone number.", "OK");
             return;
@@ -130,7 +184,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
             Student? student = null;
 
             // Determine if searching by phone or code
-            var digitsOnly = Regex.Replace(SearchText, @"\D", "");
+            var digitsOnly = Regex.Replace(searchText, @"\D", "");
             var isSearchingByPhone = digitsOnly.Length == 11;
 
             if (isSearchingByPhone)
@@ -139,7 +193,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
             }
             else
             {
-                student = await _databaseService.GetStudentByCodeAsync(SearchText);
+                student = await _databaseService.GetStudentByCodeAsync(searchText);
             }
 
             if (student != null)
@@ -184,15 +238,15 @@ public partial class ExamDutiesViewModel : BaseViewModel
                 Notes = string.Empty;
                 NotHaveDuties = false;
                 CanSave = false;
-                
-                await Application.Current!.MainPage!.DisplayAlert("Not Found", 
+
+                await Application.Current!.MainPage!.DisplayAlert("Not Found",
                     "Student not found. Please check the code or phone number.", "OK");
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error during search: {ex.Message}");
-            await Application.Current!.MainPage!.DisplayAlert("Error", 
+            await Application.Current!.MainPage!.DisplayAlert("Error",
                 $"Failed to search: {ex.Message}", "OK");
         }
         finally
@@ -201,13 +255,28 @@ public partial class ExamDutiesViewModel : BaseViewModel
         }
     }
 
+    // Public method to handle barcode scan result (called from code-behind)
+    public async Task HandleBarcodeScannedAsync(string barcode)
+    {
+        if (string.IsNullOrWhiteSpace(barcode))
+        {
+            return;
+        }
+
+        // Set the search text to the scanned barcode
+        SearchText = barcode;
+
+        // Perform the search
+        await PerformSearchAsync(barcode);
+    }
+
     // Command to save exam data
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (!StudentId.HasValue && CanSave == true  )
+        if (!StudentId.HasValue && CanSave == true)
         {
-            await Application.Current!.MainPage!.DisplayAlert("Error", 
+            await Application.Current!.MainPage!.DisplayAlert("Error",
                 "يجب اختيار الطالب اولا", "OK");
             return;
         }
@@ -215,30 +284,27 @@ public partial class ExamDutiesViewModel : BaseViewModel
         decimal? degreeValue = null;
         decimal? totalDegreeValue = null;
 
-        if (NotHaveDuties == false)
+
+        if (!string.IsNullOrWhiteSpace(Degree))
         {
-
-            if (!string.IsNullOrWhiteSpace(Degree))
+            if (!decimal.TryParse(TotalDegree, out decimal parsedTotalDegree))
             {
-                if (!decimal.TryParse(TotalDegree, out decimal parsedTotalDegree))
-                {
-                    await Application.Current!.MainPage!.DisplayAlert("Error",
-                        "يرجى ادخال الدرجه الكليه للاختبار", "OK");
-                    return;
-                }
-                totalDegreeValue = parsedTotalDegree;
+                await Application.Current!.MainPage!.DisplayAlert("Error",
+                    "يرجى ادخال الدرجه الكليه للاختبار", "OK");
+                return;
             }
+            totalDegreeValue = parsedTotalDegree;
+        }
 
-            if (!string.IsNullOrWhiteSpace(Degree))
+        if (!string.IsNullOrWhiteSpace(Degree))
+        {
+            if (!decimal.TryParse(Degree, out decimal parsedDegree))
             {
-                if (!decimal.TryParse(Degree, out decimal parsedDegree))
-                {
-                    await Application.Current!.MainPage!.DisplayAlert("Error",
-                        "يرجى ادخال درجه الطالب بصورة صحيحه", "OK");
-                    return;
-                }
-                degreeValue = parsedDegree;
+                await Application.Current!.MainPage!.DisplayAlert("Error",
+                    "يرجى ادخال درجه الطالب بصورة صحيحه", "OK");
+                return;
             }
+            degreeValue = parsedDegree;
         }
 
         try
@@ -261,7 +327,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
             // Refresh the exam badge
             await RefreshExamBadgeAsync();
 
-            await Application.Current!.MainPage!.DisplayAlert("Success", 
+            await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data saved successfully!", "OK");
 
             // Clear form but keep TotalDegree
@@ -272,7 +338,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error saving exam: {ex.Message}");
-            await Application.Current!.MainPage!.DisplayAlert("Error", 
+            await Application.Current!.MainPage!.DisplayAlert("Error",
                 $"Failed to save: {ex.Message}", "OK");
         }
         finally
@@ -285,27 +351,35 @@ public partial class ExamDutiesViewModel : BaseViewModel
     [RelayCommand]
     private async Task UpdateAsync()
     {
-        if (CurrentExam == null || !StudentId.HasValue || string.IsNullOrWhiteSpace(TotalDegree))
+        if (CurrentExam == null)
         {
-            await Application.Current!.MainPage!.DisplayAlert("Error", 
-                "Please fill in all required fields.", "OK");
-            return;
-        }
+            await Application.Current!.MainPage!.DisplayAlert("Error",
+               "يجب اختيار الطالب اولا", "OK");
 
-        if (!decimal.TryParse(TotalDegree, out decimal totalDegreeValue))
-        {
-            await Application.Current!.MainPage!.DisplayAlert("Error", 
-                "Please enter a valid total degree.", "OK");
             return;
         }
 
         decimal? degreeValue = null;
+        decimal? totalDegreeValue = null;
+
+
+        if (!string.IsNullOrWhiteSpace(Degree))
+        {
+            if (!decimal.TryParse(TotalDegree, out decimal parsedTotalDegree))
+            {
+                await Application.Current!.MainPage!.DisplayAlert("Error",
+                    "يرجى ادخال الدرجه الكليه للاختبار", "OK");
+                return;
+            }
+            totalDegreeValue = parsedTotalDegree;
+        }
+
         if (!string.IsNullOrWhiteSpace(Degree))
         {
             if (!decimal.TryParse(Degree, out decimal parsedDegree))
             {
-                await Application.Current!.MainPage!.DisplayAlert("Error", 
-                    "Please enter a valid degree.", "OK");
+                await Application.Current!.MainPage!.DisplayAlert("Error",
+                    "يرجى ادخال درجه الطالب بصورة صحيحه", "OK");
                 return;
             }
             degreeValue = parsedDegree;
@@ -325,7 +399,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
             // Refresh the exam badge
             await RefreshExamBadgeAsync();
 
-            await Application.Current!.MainPage!.DisplayAlert("Success", 
+            await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data updated successfully!", "OK");
 
             // Clear form but keep TotalDegree
@@ -336,7 +410,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error updating exam: {ex.Message}");
-            await Application.Current!.MainPage!.DisplayAlert("Error", 
+            await Application.Current!.MainPage!.DisplayAlert("Error",
                 $"Failed to update: {ex.Message}", "OK");
         }
         finally
@@ -356,7 +430,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
 
         try
         {
-            bool confirm = await Application.Current!.MainPage!.DisplayAlert("Confirm", 
+            bool confirm = await Application.Current!.MainPage!.DisplayAlert("Confirm",
                 "Are you sure you want to delete this exam record?", "Yes", "No");
 
             if (!confirm)
@@ -371,7 +445,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
             // Refresh the exam badge
             await RefreshExamBadgeAsync();
 
-            await Application.Current!.MainPage!.DisplayAlert("Success", 
+            await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data deleted successfully!", "OK");
 
             // Clear form but keep TotalDegree
@@ -382,7 +456,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error deleting exam: {ex.Message}");
-            await Application.Current!.MainPage!.DisplayAlert("Error", 
+            await Application.Current!.MainPage!.DisplayAlert("Error",
                 $"Failed to delete: {ex.Message}", "OK");
         }
         finally
