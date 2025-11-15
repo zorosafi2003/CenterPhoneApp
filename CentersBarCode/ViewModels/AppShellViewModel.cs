@@ -1,4 +1,3 @@
-using Android.Content.Res;
 
 namespace CentersBarCode.ViewModels;
 
