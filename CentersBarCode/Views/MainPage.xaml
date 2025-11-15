@@ -16,7 +16,21 @@
             Padding="20"
             Spacing="20">
             <Label
+        FontAttributes="Bold"
+        FontSize="18"
+        Text="Select a Group (Optional)" />
+
+            <!--  Groups Dropdown  -->
+            <Picker
+        Title="Select Group"
+        FontSize="20"
+        HorizontalOptions="FillAndExpand"
+        ItemsSource="{Binding Groups}"
+        SelectedItem="{Binding SelectedGroup}" />
+            
+            <Label
                 FontAttributes="Bold"
+                Padding="0,20,0,0"
                 FontSize="18"
                 Text="Select a Center" />
 
@@ -27,19 +41,6 @@
                 HorizontalOptions="FillAndExpand"
                 ItemsSource="{Binding Centers}"
                 SelectedItem="{Binding SelectedCenter}" />
-
-            <Label
-                FontAttributes="Bold"
-                FontSize="18"
-                Text="Select a Group (Optional)" />
-
-            <!--  Groups Dropdown  -->
-            <Picker
-                Title="Select Group"
-                FontSize="20"
-                HorizontalOptions="FillAndExpand"
-                ItemsSource="{Binding Groups}"
-                SelectedItem="{Binding SelectedGroup}" />
 
             <!--  Scan Buttons  -->
             <Button
@@ -80,12 +81,12 @@
             <Frame
                 Padding="20,20,20,10"
                 CornerRadius="10"
-                HeightRequest="270"
+                HeightRequest="300"
                 HorizontalOptions="Center"
                 VerticalOptions="Center"
                 WidthRequest="300">
 
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
                     <Label
                         Grid.Row="0"
                         FontAttributes="Bold"
@@ -123,10 +124,26 @@
                         FontAttributes="Bold"
                         HorizontalOptions="Start"
                         Text="{Binding ScannedGroup, StringFormat='Group: {0}'}"
-                        VerticalOptions="Start" />      
+                        VerticalOptions="Start" />
+
+                    <Label
+                        Grid.Row="5"
+                        Margin="0,10,0,0"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Start"
+                        Text="{Binding LastAttendance, StringFormat='Last Attendance: {0:dd/MM/yyyy}'}"
+                        VerticalOptions="Start" />
+
+                    <Label
+                        Grid.Row="6"
+                        Margin="0,10,0,0"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Start"
+                        Text="{Binding PaymentValue, StringFormat='Payment Value: {0}'}"
+                        VerticalOptions="Start" />
 
                     <!--  Loading indicator and buttons  -->
-                    <StackLayout Grid.Row="5" Margin="0,20,0,0">
+                    <StackLayout Grid.Row="7" Margin="0,20,0,0">
                         <!--  Activity Indicator for saving  -->
                         <ActivityIndicator
                             HorizontalOptions="Center"

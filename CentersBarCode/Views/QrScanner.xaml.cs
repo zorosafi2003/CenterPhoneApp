@@ -273,11 +273,15 @@ public partial class QrScanner : ContentPage, INotifyPropertyChanged
                                         {
                                             _mainViewModel.StudentName = student.StudentName;
                                             _mainViewModel.GroupName = student.StudentGroupName;
+                                            _mainViewModel.LastAttendance = student.LastAttendance;
+                                            _mainViewModel.PaymentValue = student.PaymentValue;
                                         }
                                         else
                                         {
                                             _mainViewModel.StudentName = "";
                                             _mainViewModel.GroupName = "";
+                                            _mainViewModel.LastAttendance = null;
+                                            _mainViewModel.PaymentValue = null;
                                         }
 
                                         // Play a short vibration for feedback

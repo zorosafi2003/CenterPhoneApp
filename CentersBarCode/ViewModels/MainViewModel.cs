@@ -24,6 +24,12 @@ public partial class MainViewModel : BaseViewModel
     private string _teacherName = string.Empty;
 
     [ObservableProperty]
+    private DateTime? _lastAttendance;
+
+    [ObservableProperty]
+    private decimal? _paymentValue;
+
+    [ObservableProperty]
     private Center? _selectedCenter;
 
     [ObservableProperty]
@@ -443,6 +449,15 @@ public partial class MainViewModel : BaseViewModel
         {
             ScannedName = student.StudentName;
             ScannedGroup = student.StudentGroupName;
+            LastAttendance = student.LastAttendance;
+            PaymentValue = student.PaymentValue;
+        }
+        else
+        {
+            ScannedName = string.Empty;
+            ScannedGroup = string.Empty;
+            LastAttendance = null;
+            PaymentValue = null;
         }
 
         ScannedCenter = SelectedCenter?.Name ?? string.Empty;
@@ -455,6 +470,8 @@ public partial class MainViewModel : BaseViewModel
         ScannedName = string.Empty;
         ScannedCenter = string.Empty;
         ScannedGroup = string.Empty;
+        LastAttendance = null;
+        PaymentValue = null;
     }
 
     private async Task RefreshRecordsBadgeAsync()

@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 
 namespace CentersBarCode.ViewModels;
 
@@ -24,6 +25,12 @@ public partial class ExamDutiesViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _studentCode = string.Empty;
+
+    [ObservableProperty]
+    private ObservableCollection<Center> _centers = new();
+
+    [ObservableProperty]
+    private Center? _selectedCenter;
 
     [ObservableProperty]
     private string _totalDegree = string.Empty;
@@ -68,6 +75,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         StudentName = string.Empty;
         StudentId = null;
         StudentCode = string.Empty;
+        SelectedCenter = null;
         TotalDegree = string.Empty;
         Degree = string.Empty;
         Notes = string.Empty;
@@ -89,11 +97,30 @@ public partial class ExamDutiesViewModel : BaseViewModel
         try
         {
             await _databaseService.InitializeAsync();
+            await LoadCentersAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error initializing: {ex.Message}");
+        }
+    }
+
+    private async Task LoadCentersAsync()
+    {
+        try
+        {
+            var centers = await _databaseService.GetAllCentersAsync();
+            Centers.Clear();
+            foreach (var center in centers)
+            {
+                Centers.Add(center);
+            }
+            System.Diagnostics.Debug.WriteLine($"Loaded {centers.Count} centers");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading centers: {ex.Message}");
         }
     }
 
@@ -108,9 +135,14 @@ public partial class ExamDutiesViewModel : BaseViewModel
         UpdateCanSave();
     }
 
+    partial void OnSelectedCenterChanged(Center? value)
+    {
+        UpdateCanSave();
+    }
+
     private void UpdateCanSave()
     {
-        CanSave = IsStudentFound &&
+        CanSave = IsStudentFound && SelectedCenter != null &&
            ((!string.IsNullOrWhiteSpace(TotalDegree) && !string.IsNullOrWhiteSpace(Degree)) || NotHaveDuties == true);
     }
 
@@ -212,12 +244,19 @@ public partial class ExamDutiesViewModel : BaseViewModel
                     Degree = existingExam.Degree?.ToString() ?? string.Empty;
                     Notes = existingExam.Notes;
                     NotHaveDuties = existingExam.NotHaveDuties;
-                    TotalDegree = existingExam.TotalDegree.ToString();
+                    TotalDegree = existingExam.TotalDegree.ToString() ?? string.Empty;
+                    
+                    // Load center from existing exam
+                    if (existingExam.CenterId != Guid.Empty)
+                    {
+                        SelectedCenter = Centers.FirstOrDefault(c => c.Id == existingExam.CenterId);
+                    }
+                    
                     IsEditMode = true;
                 }
                 else
                 {
-                    // Clear form for new entry
+                    // Clear form for new entry (but keep Center and TotalDegree)
                     CurrentExam = null;
                     Degree = string.Empty;
                     Notes = string.Empty;
@@ -281,6 +320,13 @@ public partial class ExamDutiesViewModel : BaseViewModel
             return;
         }
 
+        if (SelectedCenter == null)
+        {
+            await Application.Current!.MainPage!.DisplayAlert("Error",
+                "يرجى اختيار المركز", "OK");
+            return;
+        }
+
         decimal? degreeValue = null;
         decimal? totalDegreeValue = null;
 
@@ -316,6 +362,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
                 StudentId = StudentId.Value,
                 StudentCode = StudentCode,
                 StudentName = StudentName,
+                CenterId = SelectedCenter.Id,
                 Degree = degreeValue,
                 TotalDegree = totalDegreeValue,
                 Notes = Notes ?? string.Empty,
@@ -330,10 +377,12 @@ public partial class ExamDutiesViewModel : BaseViewModel
             await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data saved successfully!", "OK");
 
-            // Clear form but keep TotalDegree
+            // Clear form but keep TotalDegree and SelectedCenter
             var savedTotalDegree = TotalDegree;
+            var savedCenter = SelectedCenter;
             ClearForm();
             TotalDegree = savedTotalDegree;
+            SelectedCenter = savedCenter;
         }
         catch (Exception ex)
         {
@@ -356,6 +405,13 @@ public partial class ExamDutiesViewModel : BaseViewModel
             await Application.Current!.MainPage!.DisplayAlert("Error",
                "يجب اختيار الطالب اولا", "OK");
 
+            return;
+        }
+
+        if (SelectedCenter == null)
+        {
+            await Application.Current!.MainPage!.DisplayAlert("Error",
+                "يرجى اختيار المركز", "OK");
             return;
         }
 
@@ -389,6 +445,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         {
             IsSaving = true;
 
+            CurrentExam.CenterId = SelectedCenter.Id;
             CurrentExam.Degree = degreeValue;
             CurrentExam.TotalDegree = totalDegreeValue;
             CurrentExam.Notes = Notes ?? string.Empty;
@@ -402,10 +459,12 @@ public partial class ExamDutiesViewModel : BaseViewModel
             await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data updated successfully!", "OK");
 
-            // Clear form but keep TotalDegree
+            // Clear form but keep TotalDegree and SelectedCenter
             var savedTotalDegree = TotalDegree;
+            var savedCenter = SelectedCenter;
             ClearForm();
             TotalDegree = savedTotalDegree;
+            SelectedCenter = savedCenter;
         }
         catch (Exception ex)
         {
@@ -448,10 +507,12 @@ public partial class ExamDutiesViewModel : BaseViewModel
             await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data deleted successfully!", "OK");
 
-            // Clear form but keep TotalDegree
+            // Clear form but keep TotalDegree and SelectedCenter
             var savedTotalDegree = TotalDegree;
+            var savedCenter = SelectedCenter;
             ClearForm();
             TotalDegree = savedTotalDegree;
+            SelectedCenter = savedCenter;
         }
         catch (Exception ex)
         {

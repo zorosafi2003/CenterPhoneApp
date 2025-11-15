@@ -1,5 +1,5 @@
 {
-  "BaseUrl": "https://znsb2ww9-44344.uks1.devtunnels.ms/",
+  "BaseUrl": "http://api.teachers-eg.com/",
   "ImportDataEndpoint": "/centers-api/phone-app/data",
   "ExportDataEndPoint": "/centers-api/phone-app/data",
   "AuthenticationEndpoint": "/auth/login"

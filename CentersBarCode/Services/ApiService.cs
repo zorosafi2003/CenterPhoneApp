@@ -148,17 +148,13 @@ public class ApiService : IApiService
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Export data API call failed with status: {StatusCode}, Content: {ErrorContent}",
-                    response.StatusCode, errorContent);
-
                 return new Result<SetDataPhoneAppCommandResult>
                 {
                     IsSuccess = false,
                     Error = new Error
                     {
                         Code = response.StatusCode.ToString(),
-                        Description = $"Export data failed with status: {response.StatusCode}. {errorContent}"
+                        Description = $"Export data failed with status: {response.StatusCode}. {response.Content}"
                     }
                 };
             }

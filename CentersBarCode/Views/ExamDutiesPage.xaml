@@ -13,16 +13,28 @@
         <Grid RowDefinitions="Auto,Auto,*" RowSpacing="16" Padding="20">
             <!-- Header Section -->
             <VerticalStackLayout Grid.Row="0" Spacing="16">
-                <!-- Teacher Name -->
-                <HorizontalStackLayout HorizontalOptions="Start">
+
+                <!-- Center Selection Dropdown -->
+                <VerticalStackLayout Spacing="8">
                     <Label
-                        Text="Teacher: "
+                        Text="Select Center:"
                         FontAttributes="Bold"
                         TextColor="#343A40" />
-                    <Label
-                        Text="{Binding TeacherName}"
-                        TextColor="#6C757D" />
-                </HorizontalStackLayout>
+                    <Border
+                        Stroke="#DEE2E6"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12,12,12,12"
+                        BackgroundColor="White">
+                        <Picker
+                            ItemsSource="{Binding Centers}"
+                            SelectedItem="{Binding SelectedCenter}"
+                            ItemDisplayBinding="{Binding Name}"
+                            Title="Choose a center"
+                            HeightRequest="50"
+                            Margin="10,0"
+                            BackgroundColor="White" />
+                    </Border>
+                </VerticalStackLayout>
 
                 <!-- Total Degree Input -->
                 <VerticalStackLayout Spacing="8">

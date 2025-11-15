@@ -1,3 +1,5 @@
+using Android.Content.Res;
+
 namespace CentersBarCode.ViewModels;
 
 public partial class AppShellViewModel : BaseViewModel
@@ -354,51 +356,84 @@ public partial class AppShellViewModel : BaseViewModel
             }
 
             System.Diagnostics.Debug.WriteLine("Starting centers import process");
-            var list = await _databaseService.GetQrCodeRecordsAsync();
-            if (list.Count > 0)
+
+            var attednacRecords = await _databaseService.GetQrCodeRecordsAsync();
+            var examRecords = await _databaseService.GetAllExamsAsync();
+
+            if (attednacRecords.Count > 0 || examRecords.Count > 0)
             {
                 IsAutoExporting = true;
 
-                double result = (double)list.Count / 100; // Cast to double for floating-point division
-                int round = (int)Math.Ceiling(result);
-
-                for (global::System.Int32 i = 0; i < round; i++)
+                try
                 {
-                    try
+                    var success = await _apiService.ExportDataAsync(_authenticationService.BearerToken, new SetDataPhoneAppCommandRequest
                     {
-                        var sendedItems = list.Skip(i * 100).Take(100).ToList();
-
-                        var model = new CreateStudentAttendanceRequest
+                        AttendanceData = attednacRecords.Select(x => new AttendanceChildOfSetDataPhoneAppCommandRequest
                         {
-                            Data = sendedItems.Select(record => new DataChildOfCreateStudentAttendanceRequest
-                            {
-                                CenterId = record.CenterId,
-                                LocalId = record.Id,
-                                StudentCode = record.Code,
-                                StudentId = record.StudentId,
-                                CreatedDate = record.CreatedDateUtc
-                            }).ToList()
-                        };
+                            CenterId = x.CenterId,
+                            LocalId = x.Id,
+                            StudentCode = x.Code,
+                            StudentId = x.StudentId,
+                            CreatedDate = x.CreatedDateUtc
+                        }).ToList(),
+                        ExamData = examRecords.Select(x => new ExamChildOfSetDataPhoneAppCommandRequest
+                        {
+                            CenterId = x.CenterId,
+                            FinalDegree = x.TotalDegree,
+                            IsNotDoDutties = x.NotHaveDuties,
+                            LocalId = x.Id,
+                            Notes = x.Notes,
+                            StudentDegree = x.Degree,
+                            StudentId = x.StudentId,
+                            CreatedDate = x.CreatedDate
+                        }).ToList()
+                    });
 
-                        //var success = await _apiService.ExportStudentAttendanceAsync(_authenticationService.BearerToken, model);
-
-                        //if (success.IsSuccess)
-                        //{
-                        //    sendedItems = sendedItems.Where(x => success.Value.InsertedLocalIdArr.Contains(x.Id)).ToList();
-
-                        //    await _databaseService.DeleteQrCodeRecordsAsync(sendedItems);
-
-                        //}
-                    }
-                    catch (Exception)
+                    if (success.IsSuccess)
                     {
+                        var deletedAttendanceRecords = attednacRecords.Where(x => success.Value.AttendanceSavedLocalIds.Contains(x.Id)).ToList();
+                        await _databaseService.DeleteQrCodeRecordsAsync(deletedAttendanceRecords);
 
+                        var deletedExamRecords = examRecords.Where(x => success.Value.ExamSavedLocalIds.Contains(x.Id)).ToList();
+                        await _databaseService.DeleteExamsAsync(deletedExamRecords);
+
+                        await UpdateRecordsCountAsync();
+                        await UpdateExamsCountAsync();
+                    }
+                    else
+                    {
+                        if (Application.Current?.MainPage != null)
+                        {
+                            await Application.Current.MainPage.DisplayAlert("Warning",
+                                "Data not imported. Please check your connection and try again.", "OK");
+                        }
                     }
                 }
+                catch (HttpRequestException httpEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"HTTP error during centers import: {httpEx.Message}");
 
-                await UpdateRecordsCountAsync();
+                    if (Application.Current?.MainPage != null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Network Error",
+                            "Failed to connect to the server. Please check your internet connection and try again.", "OK");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error during centers import: {ex.Message}");
 
-                IsAutoExporting = false;
+                    if (Application.Current?.MainPage != null)
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Error",
+                            $"Failed to import data: {ex.Message}", "OK");
+                    }
+                }
+                finally
+                {
+                    IsAutoImporting = false;
+                    System.Diagnostics.Debug.WriteLine("data export process completed");
+                }
             }
 
         }

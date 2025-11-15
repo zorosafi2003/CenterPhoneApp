@@ -65,9 +65,7 @@ public partial class ExamDutiesPage : ContentPage
     
     private void DismissKeyboard()
     {
-        // Multiple keyboard dismissal attempts for maximum compatibility
-        
-        // Method 1: Unfocus the entry
+        // Unfocus the search entry to dismiss keyboard
         if (SearchEntry != null)
         {
             SearchEntry.IsEnabled = false;
@@ -75,10 +73,10 @@ public partial class ExamDutiesPage : ContentPage
             SearchEntry.Unfocus();
         }
         
-        // Method 2: Focus the page itself
-        this.Focus();
+        // Don't call this.Focus() as it can trigger the Picker to open
+        // The keyboard will be dismissed by unfocusing the entry
         
-        System.Diagnostics.Debug.WriteLine("Dismissed keyboard using multiple methods");
+        System.Diagnostics.Debug.WriteLine("Dismissed keyboard");
     }
 
     // Create a simple inline barcode scanner

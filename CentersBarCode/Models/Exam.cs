@@ -23,6 +23,7 @@ public class Exam
     public string Notes { get; set; } = string.Empty;
     
     public bool NotHaveDuties { get; set; }
+    public Guid CenterId { get; set; }
 
     public Exam()
     {

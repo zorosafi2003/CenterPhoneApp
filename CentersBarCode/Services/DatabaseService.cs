@@ -37,6 +37,7 @@ public interface IDatabaseService
     Task<int> SaveExamAsync(Exam exam);
     Task<int> UpdateExamAsync(Exam exam);
     Task<int> DeleteExamAsync(Exam exam);
+    Task DeleteExamsAsync(List<Exam> records);
     Task<Exam?> GetExamByStudentIdAsync(Guid studentId);
     Task<List<Exam>> GetAllExamsAsync();
 }
@@ -426,6 +427,23 @@ public class DatabaseService : IDatabaseService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error deleting exam: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task DeleteExamsAsync(List<Exam> records)
+    {
+        try
+        {
+            var database = await GetDatabaseAsync();
+            foreach (var item in records)
+            {
+                await database.DeleteAsync(item);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting QR code records: {ex.Message}");
             throw;
         }
     }

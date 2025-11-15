@@ -42,7 +42,7 @@ public class SetDataPhoneAppCommandRequest
 
 public class AttendanceChildOfSetDataPhoneAppCommandRequest
 {
-    public Guid StudentId { get; set; }
+    public Guid? StudentId { get; set; }
     public string StudentCode { get; set; } = string.Empty;
     public Guid CenterId { get; set; }
     public Guid LocalId { get; set; }
@@ -52,11 +52,11 @@ public class AttendanceChildOfSetDataPhoneAppCommandRequest
 public class ExamChildOfSetDataPhoneAppCommandRequest
 {
     public Guid StudentId { get; set; }
-    public Guid CenterId { get; set; }
-    public double FinalDegree { get; set; }
-    public double StudentDegree { get; set; }
-    public string Notes { get; set; } = string.Empty;
-    public bool IsNotDoDutties { get; set; }
+    public Guid? CenterId { get; set; }
+    public decimal? FinalDegree { get; set; }
+    public decimal? StudentDegree { get; set; }
+    public string? Notes { get; set; } = string.Empty;
+    public bool? IsNotDoDutties { get; set; }
     public Guid LocalId { get; set; }
     public DateTime CreatedDate { get; set; }
 }
