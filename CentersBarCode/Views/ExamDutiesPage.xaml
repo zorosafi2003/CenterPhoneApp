@@ -14,10 +14,10 @@
             <!-- Header Section -->
             <VerticalStackLayout Grid.Row="0" Spacing="16">
 
-                <!-- Center Selection Dropdown -->
+                <!-- Group Selection Dropdown -->
                 <VerticalStackLayout Spacing="8">
                     <Label
-                        Text="Select Center:"
+                        Text="Select Group:"
                         FontAttributes="Bold"
                         TextColor="#343A40" />
                     <Border
@@ -26,10 +26,10 @@
                         StrokeShape="RoundRectangle 12,12,12,12"
                         BackgroundColor="White">
                         <Picker
-                            ItemsSource="{Binding Centers}"
-                            SelectedItem="{Binding SelectedCenter}"
+                            ItemsSource="{Binding Groups}"
+                            SelectedItem="{Binding SelectedGroup}"
                             ItemDisplayBinding="{Binding Name}"
-                            Title="Choose a center"
+                            Title="Choose a group"
                             HeightRequest="50"
                             Margin="10,0"
                             BackgroundColor="White" />

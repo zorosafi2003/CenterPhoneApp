@@ -27,27 +27,12 @@
         HorizontalOptions="FillAndExpand"
         ItemsSource="{Binding Groups}"
         SelectedItem="{Binding SelectedGroup}" />
-            
-            <Label
-                FontAttributes="Bold"
-                Padding="0,20,0,0"
-                FontSize="18"
-                Text="Select a Center" />
-
-            <!--  Centers Dropdown  -->
-            <Picker
-                Title="Select Center"
-                FontSize="20"
-                HorizontalOptions="FillAndExpand"
-                ItemsSource="{Binding Centers}"
-                SelectedItem="{Binding SelectedCenter}" />
 
             <!--  Scan Buttons  -->
             <Button
                 Command="{Binding OpenQrScannerCommand}"
                 HorizontalOptions="FillAndExpand"
                 Clicked="OnScanClicked"
-                IsEnabled="{Binding CanScan}"
                 Text="Scan QR Code" />
 
             <!--  Auto Scan Button  -->
@@ -55,7 +40,6 @@
                 Command="{Binding OpenAutoQrScannerCommand}"
                 Clicked="OnAutoScanClicked"
                 HorizontalOptions="FillAndExpand"
-                IsEnabled="{Binding CanScan}"
                 BackgroundColor="#1E90FF"
                 TextColor="White"
                 Text="Auto Scan Mode" />
@@ -86,7 +70,7 @@
                 VerticalOptions="Center"
                 WidthRequest="300">
 
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
                     <Label
                         Grid.Row="0"
                         FontAttributes="Bold"
@@ -115,7 +99,7 @@
                         Margin="0,10,0,0"
                         FontAttributes="Bold"
                         HorizontalOptions="Start"
-                        Text="{Binding ScannedCenter, StringFormat='Center: {0}'}"
+                        Text="{Binding ScannedGroup, StringFormat='Group: {0}'}"
                         VerticalOptions="Start" />
 
                     <Label
@@ -123,7 +107,7 @@
                         Margin="0,10,0,0"
                         FontAttributes="Bold"
                         HorizontalOptions="Start"
-                        Text="{Binding ScannedGroup, StringFormat='Group: {0}'}"
+                        Text="{Binding LastAttendance, StringFormat='Last Attendance: {0:dd/MM/yyyy}'}"
                         VerticalOptions="Start" />
 
                     <Label
@@ -131,19 +115,11 @@
                         Margin="0,10,0,0"
                         FontAttributes="Bold"
                         HorizontalOptions="Start"
-                        Text="{Binding LastAttendance, StringFormat='Last Attendance: {0:dd/MM/yyyy}'}"
-                        VerticalOptions="Start" />
-
-                    <Label
-                        Grid.Row="6"
-                        Margin="0,10,0,0"
-                        FontAttributes="Bold"
-                        HorizontalOptions="Start"
                         Text="{Binding PaymentValue, StringFormat='Payment Value: {0}'}"
                         VerticalOptions="Start" />
 
                     <!--  Loading indicator and buttons  -->
-                    <StackLayout Grid.Row="7" Margin="0,20,0,0">
+                    <StackLayout Grid.Row="6" Margin="0,20,0,0">
                         <!--  Activity Indicator for saving  -->
                         <ActivityIndicator
                             HorizontalOptions="Center"

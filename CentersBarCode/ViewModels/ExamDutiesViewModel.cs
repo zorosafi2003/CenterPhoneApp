@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Text.RegularExpressions;
 
 namespace CentersBarCode.ViewModels;
 
@@ -27,10 +26,10 @@ public partial class ExamDutiesViewModel : BaseViewModel
     private string _studentCode = string.Empty;
 
     [ObservableProperty]
-    private ObservableCollection<Center> _centers = new();
+    private ObservableCollection<Group> _groups = new();
 
     [ObservableProperty]
-    private Center? _selectedCenter;
+    private Group? _selectedGroup;
 
     [ObservableProperty]
     private string _totalDegree = string.Empty;
@@ -70,12 +69,11 @@ public partial class ExamDutiesViewModel : BaseViewModel
         _databaseService = databaseService;
         _authenticationService = authenticationService;
 
-        // Initialize properties
         SearchText = string.Empty;
         StudentName = string.Empty;
         StudentId = null;
         StudentCode = string.Empty;
-        SelectedCenter = null;
+        SelectedGroup = null;
         TotalDegree = string.Empty;
         Degree = string.Empty;
         Notes = string.Empty;
@@ -88,7 +86,6 @@ public partial class ExamDutiesViewModel : BaseViewModel
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
         Title = "Exam and Duties";
 
-        // Initialize database
         InitializeAsync();
     }
 
@@ -97,7 +94,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         try
         {
             await _databaseService.InitializeAsync();
-            await LoadCentersAsync();
+            await LoadGroupsAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
         }
         catch (Exception ex)
@@ -106,25 +103,24 @@ public partial class ExamDutiesViewModel : BaseViewModel
         }
     }
 
-    private async Task LoadCentersAsync()
+    private async Task LoadGroupsAsync()
     {
         try
         {
-            var centers = await _databaseService.GetAllCentersAsync();
-            Centers.Clear();
-            foreach (var center in centers)
+            var groups = await _databaseService.GetAllGroupsAsync();
+            Groups.Clear();
+            foreach (var group in groups)
             {
-                Centers.Add(center);
+                Groups.Add(group);
             }
-            System.Diagnostics.Debug.WriteLine($"Loaded {centers.Count} centers");
+            System.Diagnostics.Debug.WriteLine($"Loaded {groups.Count} groups");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading centers: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error loading groups: {ex.Message}");
         }
     }
 
-    // Handle changes to degree or notHaveDuties to update CanSave
     partial void OnDegreeChanged(string value)
     {
         UpdateCanSave();
@@ -135,22 +131,20 @@ public partial class ExamDutiesViewModel : BaseViewModel
         UpdateCanSave();
     }
 
-    partial void OnSelectedCenterChanged(Center? value)
+    partial void OnSelectedGroupChanged(Group? value)
     {
         UpdateCanSave();
     }
 
     private void UpdateCanSave()
     {
-        CanSave = IsStudentFound && SelectedCenter != null &&
+        CanSave = IsStudentFound && SelectedGroup != null &&
            ((!string.IsNullOrWhiteSpace(TotalDegree) && !string.IsNullOrWhiteSpace(Degree)) || NotHaveDuties == true);
     }
 
-    // Command to perform the search
     [RelayCommand]
     private async Task SearchAsync()
     {
-        // Notify that the search command is executed (for keyboard dismissal)
         SearchCommandExecuted?.Invoke();
 
         if (string.IsNullOrWhiteSpace(SearchText))
@@ -162,16 +156,13 @@ public partial class ExamDutiesViewModel : BaseViewModel
         await PerformSearchAsync(SearchText);
     }
 
-    // Command to open camera for barcode scanning
     [RelayCommand]
     private async Task OpenCameraAsync()
     {
         try
         {
-            // Notify that we're opening camera (for keyboard dismissal)
             SearchCommandExecuted?.Invoke();
 
-            // Request camera permissions
             var status = await Permissions.CheckStatusAsync<Permissions.Camera>();
             if (status != PermissionStatus.Granted)
             {
@@ -185,7 +176,6 @@ public partial class ExamDutiesViewModel : BaseViewModel
                 return;
             }
 
-            // Trigger the camera opening event
             if (OpenCameraRequested != null)
             {
                 await OpenCameraRequested.Invoke();
@@ -201,7 +191,6 @@ public partial class ExamDutiesViewModel : BaseViewModel
         }
     }
 
-    // Helper method to perform search (extracted for reuse)
     private async Task PerformSearchAsync(string searchText)
     {
         if (string.IsNullOrWhiteSpace(searchText))
@@ -215,8 +204,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
             IsSearching = true;
             Student? student = null;
 
-            // Determine if searching by phone or code
-            var digitsOnly = Regex.Replace(searchText, @"\D", "");
+            var digitsOnly = System.Text.RegularExpressions.Regex.Replace(searchText, @"\D", "");
             var isSearchingByPhone = digitsOnly.Length == 11;
 
             if (isSearchingByPhone)
@@ -235,33 +223,35 @@ public partial class ExamDutiesViewModel : BaseViewModel
                 StudentCode = student.StudentCode;
                 IsStudentFound = true;
 
-                // Check if student already has an exam record
                 var existingExam = await _databaseService.GetExamByStudentIdAsync(student.Id);
                 if (existingExam != null)
                 {
-                    // Load existing data
                     CurrentExam = existingExam;
                     Degree = existingExam.Degree?.ToString() ?? string.Empty;
                     Notes = existingExam.Notes;
                     NotHaveDuties = existingExam.NotHaveDuties;
                     TotalDegree = existingExam.TotalDegree.ToString() ?? string.Empty;
-                    
-                    // Load center from existing exam
-                    if (existingExam.CenterId != Guid.Empty)
+
+                    if (existingExam.GroupId != Guid.Empty)
                     {
-                        SelectedCenter = Centers.FirstOrDefault(c => c.Id == existingExam.CenterId);
+                        SelectedGroup = Groups.FirstOrDefault(g => g.Id == existingExam.GroupId);
                     }
-                    
+
                     IsEditMode = true;
                 }
                 else
                 {
-                    // Clear form for new entry (but keep Center and TotalDegree)
                     CurrentExam = null;
                     Degree = string.Empty;
                     Notes = string.Empty;
                     NotHaveDuties = false;
                     IsEditMode = false;
+
+                    // Prefill group from student when creating a new exam
+                    if (student.StudentGroupId.HasValue && student.StudentGroupId.Value != Guid.Empty)
+                    {
+                        SelectedGroup ??= Groups.FirstOrDefault(g => g.Id == student.StudentGroupId.Value);
+                    }
                 }
 
                 UpdateCanSave();
@@ -294,7 +284,6 @@ public partial class ExamDutiesViewModel : BaseViewModel
         }
     }
 
-    // Public method to handle barcode scan result (called from code-behind)
     public async Task HandleBarcodeScannedAsync(string barcode)
     {
         if (string.IsNullOrWhiteSpace(barcode))
@@ -302,14 +291,10 @@ public partial class ExamDutiesViewModel : BaseViewModel
             return;
         }
 
-        // Set the search text to the scanned barcode
         SearchText = barcode;
-
-        // Perform the search
         await PerformSearchAsync(barcode);
     }
 
-    // Command to save exam data
     [RelayCommand]
     private async Task SaveAsync()
     {
@@ -320,16 +305,15 @@ public partial class ExamDutiesViewModel : BaseViewModel
             return;
         }
 
-        if (SelectedCenter == null)
+        if (SelectedGroup == null)
         {
             await Application.Current!.MainPage!.DisplayAlert("Error",
-                "يرجى اختيار المركز", "OK");
+                "يرجى اختيار المجموعه", "OK");
             return;
         }
 
         decimal? degreeValue = null;
         decimal? totalDegreeValue = null;
-
 
         if (!string.IsNullOrWhiteSpace(Degree))
         {
@@ -362,7 +346,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
                 StudentId = StudentId.Value,
                 StudentCode = StudentCode,
                 StudentName = StudentName,
-                CenterId = SelectedCenter.Id,
+                GroupId = SelectedGroup.Id,
                 Degree = degreeValue,
                 TotalDegree = totalDegreeValue,
                 Notes = Notes ?? string.Empty,
@@ -371,18 +355,16 @@ public partial class ExamDutiesViewModel : BaseViewModel
 
             await _databaseService.SaveExamAsync(exam);
 
-            // Refresh the exam badge
             await RefreshExamBadgeAsync();
 
             await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data saved successfully!", "OK");
 
-            // Clear form but keep TotalDegree and SelectedCenter
             var savedTotalDegree = TotalDegree;
-            var savedCenter = SelectedCenter;
+            var savedGroup = SelectedGroup;
             ClearForm();
             TotalDegree = savedTotalDegree;
-            SelectedCenter = savedCenter;
+            SelectedGroup = savedGroup;
         }
         catch (Exception ex)
         {
@@ -396,7 +378,6 @@ public partial class ExamDutiesViewModel : BaseViewModel
         }
     }
 
-    // Command to update exam data
     [RelayCommand]
     private async Task UpdateAsync()
     {
@@ -408,16 +389,15 @@ public partial class ExamDutiesViewModel : BaseViewModel
             return;
         }
 
-        if (SelectedCenter == null)
+        if (SelectedGroup == null)
         {
             await Application.Current!.MainPage!.DisplayAlert("Error",
-                "يرجى اختيار المركز", "OK");
+                "يرجى اختيار المجموعه", "OK");
             return;
         }
 
         decimal? degreeValue = null;
         decimal? totalDegreeValue = null;
-
 
         if (!string.IsNullOrWhiteSpace(Degree))
         {
@@ -445,7 +425,7 @@ public partial class ExamDutiesViewModel : BaseViewModel
         {
             IsSaving = true;
 
-            CurrentExam.CenterId = SelectedCenter.Id;
+            CurrentExam.GroupId = SelectedGroup.Id;
             CurrentExam.Degree = degreeValue;
             CurrentExam.TotalDegree = totalDegreeValue;
             CurrentExam.Notes = Notes ?? string.Empty;
@@ -453,18 +433,16 @@ public partial class ExamDutiesViewModel : BaseViewModel
 
             await _databaseService.UpdateExamAsync(CurrentExam);
 
-            // Refresh the exam badge
             await RefreshExamBadgeAsync();
 
             await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data updated successfully!", "OK");
 
-            // Clear form but keep TotalDegree and SelectedCenter
             var savedTotalDegree = TotalDegree;
-            var savedCenter = SelectedCenter;
+            var savedGroup = SelectedGroup;
             ClearForm();
             TotalDegree = savedTotalDegree;
-            SelectedCenter = savedCenter;
+            SelectedGroup = savedGroup;
         }
         catch (Exception ex)
         {
@@ -478,7 +456,6 @@ public partial class ExamDutiesViewModel : BaseViewModel
         }
     }
 
-    // Command to delete exam data
     [RelayCommand]
     private async Task DeleteAsync()
     {
@@ -501,18 +478,16 @@ public partial class ExamDutiesViewModel : BaseViewModel
 
             await _databaseService.DeleteExamAsync(CurrentExam);
 
-            // Refresh the exam badge
             await RefreshExamBadgeAsync();
 
             await Application.Current!.MainPage!.DisplayAlert("Success",
                 "Exam data deleted successfully!", "OK");
 
-            // Clear form but keep TotalDegree and SelectedCenter
             var savedTotalDegree = TotalDegree;
-            var savedCenter = SelectedCenter;
+            var savedGroup = SelectedGroup;
             ClearForm();
             TotalDegree = savedTotalDegree;
-            SelectedCenter = savedCenter;
+            SelectedGroup = savedGroup;
         }
         catch (Exception ex)
         {

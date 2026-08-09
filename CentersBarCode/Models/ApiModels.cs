@@ -52,7 +52,7 @@ public class AttendanceChildOfSetDataPhoneAppCommandRequest
 public class ExamChildOfSetDataPhoneAppCommandRequest
 {
     public Guid StudentId { get; set; }
-    public Guid? CenterId { get; set; }
+    public Guid? GroupId { get; set; }
     public decimal? FinalDegree { get; set; }
     public decimal? StudentDegree { get; set; }
     public string? Notes { get; set; } = string.Empty;

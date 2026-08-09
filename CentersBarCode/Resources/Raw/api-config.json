@@ -1,5 +1,5 @@
 {
-  "BaseUrl": "http://api.teachers-eg.com/",
+  "BaseUrl": "http://teachersapi.teachers-eg.com/",
   "ImportDataEndpoint": "/centers-api/phone-app/data",
   "ExportDataEndPoint": "/centers-api/phone-app/data",
   "AuthenticationEndpoint": "/auth/login"

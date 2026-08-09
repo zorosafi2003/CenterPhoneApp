@@ -5,11 +5,7 @@ namespace CentersBarCode.ViewModels;
 public partial class MainViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
-    private readonly ICenterService _centerService;
     private readonly IAuthenticationService _authenticationService;
-
-    [ObservableProperty]
-    private ObservableCollection<Center> _centers;
 
     [ObservableProperty]
     private ObservableCollection<Group> _groups;
@@ -30,9 +26,6 @@ public partial class MainViewModel : BaseViewModel
     private decimal? _paymentValue;
 
     [ObservableProperty]
-    private Center? _selectedCenter;
-
-    [ObservableProperty]
     private Group? _selectedGroup;
 
     [ObservableProperty]
@@ -49,9 +42,6 @@ public partial class MainViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _scannedName;
-
-    [ObservableProperty]
-    private string _scannedCenter;
 
     [ObservableProperty]
     private string _scannedGroup;
@@ -71,32 +61,27 @@ public partial class MainViewModel : BaseViewModel
     [ObservableProperty]
     private bool _showAutoScanCounter;
 
-    public MainViewModel(IDatabaseService databaseService, ICenterService centerService, IAuthenticationService authenticationService)
+    public MainViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
-        _centerService = centerService;
         _authenticationService = authenticationService;
 
-        // Initialize empty centers and groups list - will be populated from database
-        Centers = new ObservableCollection<Center>();
         Groups = new ObservableCollection<Group>();
 
         StudentName = string.Empty;
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
-        // Initialize other properties
         IsQrScannerVisible = false;
         IsPopupVisible = false;
         ScannedQrText = string.Empty;
         ScannedCode = string.Empty;
         ScannedName = string.Empty;
-        ScannedCenter = string.Empty;
+        ScannedGroup = string.Empty;
         IsCameraInitialized = false;
         IsSaving = false;
         IsAutoScanMode = false;
         AutoScanCount = 0;
         ShowAutoScanCounter = false;
 
-        // Initialize database and load centers and groups
         InitializeAsync();
     }
 
@@ -107,33 +92,11 @@ public partial class MainViewModel : BaseViewModel
             await _databaseService.InitializeAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
 
-            // Load centers and groups from database
-            await LoadCentersAsync();
             await LoadGroupsAsync();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error initializing: {ex.Message}");
-        }
-    }
-
-    private async Task LoadCentersAsync()
-    {
-        try
-        {
-            var centersFromDb = await _centerService.GetAllCentersAsync();
-
-            Centers.Clear();
-            foreach (var center in centersFromDb)
-            {
-                Centers.Add(center);
-            }
-
-            System.Diagnostics.Debug.WriteLine($"Loaded {Centers.Count} centers");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading centers: {ex.Message}");
         }
     }
 
@@ -161,20 +124,15 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-    // Command to open QR scanner when a center is selected
     [RelayCommand]
     private void OpenQrScanner()
     {
-        // Reset camera state before showing scanner
-        // Show scanner UI
         IsQrScannerVisible = true;
         IsCameraInitialized = true;
 
-        // Camera initialization happens in the code-behind
         System.Diagnostics.Debug.WriteLine("QR Scanner opened");
     }
 
-    // Command to toggle Auto Scan mode
     [RelayCommand]
     private void ToggleAutoScan()
     {
@@ -191,47 +149,31 @@ public partial class MainViewModel : BaseViewModel
         System.Diagnostics.Debug.WriteLine($"Auto Scan Mode: {IsAutoScanMode}");
     }
 
-    // Command to open QR scanner in Auto Scan mode
     [RelayCommand]
     private void OpenAutoQrScanner()
     {
-        if (SelectedCenter == null)
-        {
-            if (Application.Current?.MainPage != null)
-            {
-                Application.Current.MainPage.DisplayAlert("Error",
-                    "Please select a center before starting Auto Scan.", "OK");
-            }
-            return;
-        }
-
-        // Set Auto Scan mode to true
         IsAutoScanMode = true;
         ShowAutoScanCounter = true;
         AutoScanCount = 0;
 
-        // Show scanner UI
         IsQrScannerVisible = true;
         IsCameraInitialized = true;
 
         System.Diagnostics.Debug.WriteLine("Auto QR Scanner opened");
     }
 
-    // Direct save QR code without showing popup (for Auto Scan mode)
     public async Task<int?> SaveQrCodeDirectly(string code)
     {
-        if (SelectedCenter == null || string.IsNullOrEmpty(code))
+        if (string.IsNullOrEmpty(code))
         {
-            System.Diagnostics.Debug.WriteLine("Cannot save QR code: Center not selected or code is empty");
+            System.Diagnostics.Debug.WriteLine("Cannot save QR code: code is empty");
             return null;
         }
 
         try
         {
-            // Look up student info by code first
             var student = await _databaseService.GetStudentByCodeAsync(code);
 
-            // If a group is selected (not None), check if student belongs to that group
             if (SelectedGroup != null && SelectedGroup.Id != Guid.Empty && student != null)
             {
                 if (student.StudentGroupId != SelectedGroup.Id)
@@ -240,31 +182,30 @@ public partial class MainViewModel : BaseViewModel
 
                     await Application.Current.MainPage.DisplayAlert("Save Error", $" مسموح باضافه طلاب مجموعه  {SelectedGroup.Name} فقط .", "OK");
 
-                    return -1; // Return -1 to indicate filtered out by group
+                    return -1;
                 }
             }
 
+            var groupId = SelectedGroup != null && SelectedGroup.Id != Guid.Empty
+                ? SelectedGroup.Id
+                : student?.StudentGroupId ?? Guid.Empty;
+
             var qrRecord = new QrCodeRecord(
-                centerId: SelectedCenter.Id,
+                centerId: groupId,
                 code: code
             );
 
-            // Add student info if found
             if (student != null)
             {
                 qrRecord.StudentId = student.Id;
                 qrRecord.StudentName = student.StudentName;
             }
 
-            // Save to database
             var saveQrCodeRecordAsyncResult = await _databaseService.SaveQrCodeRecordAsync(qrRecord);
 
             if (saveQrCodeRecordAsyncResult != 0)
             {
-                // Increment auto scan counter
                 AutoScanCount++;
-
-                // Refresh the records badge in AppShell
                 await RefreshRecordsBadgeAsync();
 
                 System.Diagnostics.Debug.WriteLine($"QR Code saved directly: CenterId={qrRecord.CenterId}, Code={code}, CreatedDateUtc={qrRecord.CreatedDateUtc}, AutoScanCount={AutoScanCount}");
@@ -279,15 +220,12 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-    // Direct save QR code without showing popup (for Auto Scan mode)
     public async Task<Student?> GetStudentInfo(string code)
     {
         try
         {
-            // Look up student info by code first
             var student = await _databaseService.GetStudentByCodeAsync(code);
 
-            // If a group is selected (not None), check if student belongs to that group
             if (SelectedGroup != null && SelectedGroup.Id != Guid.Empty && student != null)
             {
                 if (student.StudentGroupId != SelectedGroup.Id)
@@ -306,16 +244,15 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-    // Command to save the scanned QR code
     [RelayCommand]
     private async Task SaveQrCode()
     {
-        if (SelectedCenter == null || string.IsNullOrEmpty(ScannedCode))
+        if (string.IsNullOrEmpty(ScannedCode))
         {
             if (Application.Current?.MainPage != null)
             {
                 await Application.Current.MainPage.DisplayAlert("Error",
-                    "Please ensure a center is selected and QR code is scanned.", "OK");
+                    "Please ensure a QR code is scanned.", "OK");
             }
             return;
         }
@@ -326,7 +263,6 @@ public partial class MainViewModel : BaseViewModel
 
             var student = await _databaseService.GetStudentByCodeAsync(ScannedCode);
 
-            // If a group is selected (not None), check if student belongs to that group
             if (SelectedGroup != null && SelectedGroup.Id != Guid.Empty && student != null)
             {
                 if (student.StudentGroupId != SelectedGroup.Id)
@@ -342,25 +278,25 @@ public partial class MainViewModel : BaseViewModel
                 }
             }
 
+            var groupId = SelectedGroup != null && SelectedGroup.Id != Guid.Empty
+                ? SelectedGroup.Id
+                : student?.StudentGroupId ?? Guid.Empty;
+
             var qrRecord = new QrCodeRecord(
-                centerId: SelectedCenter.Id,
+                centerId: groupId,
                 code: ScannedCode
             );
 
-            // Add student info if found
             if (student != null)
             {
                 qrRecord.StudentId = student.Id;
                 qrRecord.StudentName = student.StudentName;
             }
 
-            // Save to database
             await _databaseService.SaveQrCodeRecordAsync(qrRecord);
 
-            // Refresh the records badge in AppShell
             await RefreshRecordsBadgeAsync();
 
-            // Close the popup and reset values
             IsPopupVisible = false;
             ResetScannedData();
 
@@ -381,7 +317,6 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-    // Command to cancel and close the popup
     [RelayCommand]
     private void CancelQrCode()
     {
@@ -389,7 +324,6 @@ public partial class MainViewModel : BaseViewModel
         ResetScannedData();
     }
 
-    // Command to close the QR scanner view
     [RelayCommand]
     private void CloseQrScanner()
     {
@@ -400,35 +334,29 @@ public partial class MainViewModel : BaseViewModel
         System.Diagnostics.Debug.WriteLine("QR Scanner closed");
     }
 
-    // Property to determine if the scan button should be enabled
-    public bool CanScan => SelectedCenter != null;
-
-    // Update command bindings when SelectedCenter changes
-    partial void OnSelectedCenterChanged(Center? value)
-    {
-        OnPropertyChanged(nameof(CanScan));
-    }
-
-    // Handle group selection changes
     partial void OnSelectedGroupChanged(Group? value)
     {
         if (value != null && value.Id == Guid.Empty)
         {
+            GroupName = string.Empty;
             System.Diagnostics.Debug.WriteLine("'None' option selected - group filter cleared");
         }
         else if (value != null)
         {
+            GroupName = value.Name;
             System.Diagnostics.Debug.WriteLine($"Group selected: {value.Name} (ID: {value.Id})");
+        }
+        else
+        {
+            GroupName = string.Empty;
         }
     }
 
-    // Handle camera initialization state change
     partial void OnIsCameraInitializedChanged(bool value)
     {
         System.Diagnostics.Debug.WriteLine($"Camera initialized: {value}");
     }
 
-    // Handle auto scan mode changes
     partial void OnIsAutoScanModeChanged(bool value)
     {
         ShowAutoScanCounter = value;
@@ -438,7 +366,6 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-    // Helper method to parse scanned QR text into components
     public async Task ProcessScannedQrCode(string qrText)
     {
         ScannedQrText = qrText;
@@ -459,8 +386,6 @@ public partial class MainViewModel : BaseViewModel
             LastAttendance = null;
             PaymentValue = null;
         }
-
-        ScannedCenter = SelectedCenter?.Name ?? string.Empty;
     }
 
     private void ResetScannedData()
@@ -468,7 +393,6 @@ public partial class MainViewModel : BaseViewModel
         ScannedQrText = string.Empty;
         ScannedCode = string.Empty;
         ScannedName = string.Empty;
-        ScannedCenter = string.Empty;
         ScannedGroup = string.Empty;
         LastAttendance = null;
         PaymentValue = null;
@@ -489,11 +413,9 @@ public partial class MainViewModel : BaseViewModel
         }
     }
 
-    // Command to refresh centers and groups from database
     [RelayCommand]
     private async Task RefreshCentersAsync()
     {
-        await LoadCentersAsync();
         await LoadGroupsAsync();
     }
 }

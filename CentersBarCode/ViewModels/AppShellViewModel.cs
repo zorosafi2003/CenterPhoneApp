@@ -377,7 +377,7 @@ public partial class AppShellViewModel : BaseViewModel
                         }).ToList(),
                         ExamData = examRecords.Select(x => new ExamChildOfSetDataPhoneAppCommandRequest
                         {
-                            CenterId = x.CenterId,
+                            GroupId = x.GroupId,
                             FinalDegree = x.TotalDegree,
                             IsNotDoDutties = x.NotHaveDuties,
                             LocalId = x.Id,

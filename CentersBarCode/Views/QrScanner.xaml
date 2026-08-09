@@ -87,18 +87,11 @@
                 </Frame>
 
                 <Label
-                  BackgroundColor="Transparent"
-                  FontSize="18"
-                  HorizontalTextAlignment="Center"
-                  IsVisible="{Binding SelectedCenter}"
-                  Text="{Binding SelectedCenter}"
-                  TextColor="#FFFFFF" />        
-                <Label
                     BackgroundColor="Transparent"
                     FontSize="18"
                     HorizontalTextAlignment="Center"
-                    IsVisible="{Binding GroupName}"
-                    Text="{Binding GroupName}"
+                    IsVisible="{Binding SelectedGroup}"
+                    Text="{Binding SelectedGroup}"
                     TextColor="#FFFFFF" />
                 <Label
                      BackgroundColor="Transparent"
