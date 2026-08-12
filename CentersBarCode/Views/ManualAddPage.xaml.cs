@@ -38,8 +38,8 @@ public partial class ManualAddPage : ContentPage
     {
         base.OnAppearing();
         
-        // Refresh centers data when the page appears
-        await _viewModel.RefreshCentersCommand.ExecuteAsync(null);
+        // Refresh groups data when the page appears
+        await _viewModel.RefreshGroupsCommand.ExecuteAsync(null);
     }
     
     private void DismissKeyboard()

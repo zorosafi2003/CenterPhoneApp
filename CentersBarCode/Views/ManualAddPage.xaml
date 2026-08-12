@@ -30,16 +30,16 @@
             TextColor="#6C757D" />
       </HorizontalStackLayout>
 
-      <!-- Center Selection -->
+      <!-- Group Selection -->
       <VerticalStackLayout Grid.Row="1" Spacing="8">
         <Label
-            Text="Select Center:"
+            Text="Select Group:"
             FontAttributes="Bold"
             TextColor="#343A40" />
         <Picker
-            ItemsSource="{Binding Centers}"
-            SelectedItem="{Binding SelectedCenter}"
-            Title="Select a center"
+            ItemsSource="{Binding Groups}"
+            SelectedItem="{Binding SelectedGroup}"
+            Title="Select a group"
             BackgroundColor="White"
             FontSize="16"
             HeightRequest="50">

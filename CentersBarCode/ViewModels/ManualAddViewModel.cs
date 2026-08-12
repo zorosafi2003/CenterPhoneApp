@@ -1,22 +1,22 @@
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
+using Group = CentersBarCode.Models.Group;
 
 namespace CentersBarCode.ViewModels;
 
 public partial class ManualAddViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
-    private readonly ICenterService _centerService;
     private readonly IAuthenticationService _authenticationService;
     
     // Event to notify when search command is executed
     public event Action SearchCommandExecuted;
 
     [ObservableProperty]
-    private ObservableCollection<Center> _centers;
+    private ObservableCollection<Group> _groups;
 
     [ObservableProperty]
-    private Center? _selectedCenter;
+    private Group? _selectedGroup;
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -42,18 +42,17 @@ public partial class ManualAddViewModel : BaseViewModel
     [ObservableProperty]
     private bool _hasResults;
 
-    public ManualAddViewModel(IDatabaseService databaseService, ICenterService centerService, IAuthenticationService authenticationService)
+    public ManualAddViewModel(IDatabaseService databaseService, IAuthenticationService authenticationService)
     {
         _databaseService = databaseService;
-        _centerService = centerService;
         _authenticationService = authenticationService;
 
         // Initialize collections
-        Centers = new ObservableCollection<Center>();
+        Groups = new ObservableCollection<Group>();
         SearchResults = new ObservableCollection<Student>();
 
         // Initialize properties
-        SelectedCenter = null;
+        SelectedGroup = null;
         SelectedStudent = null;
         SearchText = string.Empty;
         IsSearching = false;
@@ -62,7 +61,7 @@ public partial class ManualAddViewModel : BaseViewModel
         TeacherName = _authenticationService.TeacherName ?? string.Empty;
         Title = "Manual Attendance";
 
-        // Initialize database and load centers
+        // Initialize database and load groups
         InitializeAsync();
     }
 
@@ -73,8 +72,7 @@ public partial class ManualAddViewModel : BaseViewModel
             await _databaseService.InitializeAsync();
             System.Diagnostics.Debug.WriteLine("Database initialized successfully");
 
-            // Load centers from database
-            await LoadCentersAsync();
+            await LoadGroupsAsync();
         }
         catch (Exception ex)
         {
@@ -82,23 +80,23 @@ public partial class ManualAddViewModel : BaseViewModel
         }
     }
 
-    private async Task LoadCentersAsync()
+    private async Task LoadGroupsAsync()
     {
         try
         {
-            var centersFromDb = await _centerService.GetAllCentersAsync();
+            var groupsFromDb = await _databaseService.GetAllGroupsAsync();
 
-            Centers.Clear();
-            foreach (var center in centersFromDb)
+            Groups.Clear();
+            foreach (var group in groupsFromDb)
             {
-                Centers.Add(center);
+                Groups.Add(group);
             }
 
-            System.Diagnostics.Debug.WriteLine($"Loaded {Centers.Count} centers");
+            System.Diagnostics.Debug.WriteLine($"Loaded {Groups.Count} groups");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading centers: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error loading groups: {ex.Message}");
         }
     }
 
@@ -117,9 +115,9 @@ public partial class ManualAddViewModel : BaseViewModel
     }
 
     // Property to determine if we can save attendance
-    public bool CanSaveAttendance => SelectedCenter != null && SelectedStudent != null;
+    public bool CanSaveAttendance => SelectedGroup != null && SelectedStudent != null;
 
-    partial void OnSelectedCenterChanged(Center? value)
+    partial void OnSelectedGroupChanged(Group? value)
     {
         OnPropertyChanged(nameof(CanSaveAttendance));
     }
@@ -184,12 +182,12 @@ public partial class ManualAddViewModel : BaseViewModel
     [RelayCommand]
     private async Task SaveAttendanceAsync()
     {
-        if (SelectedCenter == null || SelectedStudent == null)
+        if (SelectedGroup == null || SelectedStudent == null)
         {
             if (Application.Current?.MainPage != null)
             {
                 await Application.Current.MainPage.DisplayAlert("Error",
-                    "Please select both a center and a student.", "OK");
+                    "Please select both a group and a student.", "OK");
             }
             return;
         }
@@ -212,11 +210,22 @@ public partial class ManualAddViewModel : BaseViewModel
                 return;
             }
 
-            // Create QR code record - need to convert center ID string to Guid
-            Guid centerGuid = SelectedCenter.Id;
+            if (SelectedGroup.Id != Guid.Empty &&
+                SelectedStudent.StudentGroupId.HasValue &&
+                SelectedStudent.StudentGroupId.Value != Guid.Empty &&
+                SelectedStudent.StudentGroupId.Value != SelectedGroup.Id)
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Save Error",
+                        $" مسموح باضافه طلاب مجموعه  {SelectedGroup.Name} فقط .", "OK");
+                }
+                return;
+            }
 
+            // Store group id in CenterId field (same pattern as QR scanner attendance)
             var qrRecord = new QrCodeRecord(
-                centerId: centerGuid,
+                centerId: SelectedGroup.Id,
                 code: SelectedStudent.StudentCode)
             {
                 StudentId = SelectedStudent.Id,
@@ -235,7 +244,7 @@ public partial class ManualAddViewModel : BaseViewModel
             HasResults = false;
             SearchText = string.Empty;
 
-            System.Diagnostics.Debug.WriteLine($"Attendance saved: CenterId={qrRecord.CenterId}, Code={qrRecord.Code}, StudentName={qrRecord.StudentName}");
+            System.Diagnostics.Debug.WriteLine($"Attendance saved: GroupId={qrRecord.CenterId}, Code={qrRecord.Code}, StudentName={qrRecord.StudentName}");
         }
         catch (Exception ex)
         {
@@ -252,11 +261,11 @@ public partial class ManualAddViewModel : BaseViewModel
         }
     }
 
-    // Command to refresh centers from database
+    // Command to refresh groups from database
     [RelayCommand]
-    private async Task RefreshCentersAsync()
+    private async Task RefreshGroupsAsync()
     {
-        await LoadCentersAsync();
+        await LoadGroupsAsync();
     }
 
     private async Task RefreshRecordsBadgeAsync()

@@ -12,14 +12,14 @@
 		<MauiVersion>8.0.92</MauiVersion>
 
 		<!-- Display name -->
-		<ApplicationTitle>CentersBarCode</ApplicationTitle>
+		<ApplicationTitle>ScholarBarCode</ApplicationTitle>
 
 		<!-- App Identifier (must match AndroidManifest package; no hyphens) -->
 		<ApplicationId>com.teacherseg.CentersBarCode</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>10.0</ApplicationDisplayVersion>
-		<ApplicationVersion>10</ApplicationVersion>
+		<ApplicationDisplayVersion>11.0</ApplicationDisplayVersion>
+		<ApplicationVersion>11</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
@@ -27,8 +27,8 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		
-		<!-- Add Android specific properties -->
-		<AndroidLinkSkip Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">Camera.MAUI</AndroidLinkSkip>
+		<!-- Keep barcode/scanner assemblies when linking -->
+		<AndroidLinkSkip Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">Camera.MAUI;BarcodeScanning.Native.Maui;ZXing.Net;ZXing.Net.MAUI;ZXing.Net.MAUI.Controls</AndroidLinkSkip>
 		<!-- VS Archive Manager requires APK; Release otherwise defaults to AAB -->
 		<AndroidPackageFormat Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">apk</AndroidPackageFormat>
 	</PropertyGroup>
@@ -105,7 +105,7 @@
 		<framework>Flyout</framework>
 	</PropertyGroup>
 	
-	<!-- Prevent code stripping that might affect Camera.MAUI -->
+	<!-- Avoid profiled AOT size/complexity for this app -->
 	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
 		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
 	</PropertyGroup>
@@ -114,9 +114,16 @@
 	  <AndroidSigningKeyAlias></AndroidSigningKeyAlias>
 	  <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <AndroidKeyStore>False</AndroidKeyStore>
-	  <AndroidSigningKeyAlias></AndroidSigningKeyAlias>
+	<!-- Smaller Release APK: phones only (arm64) + SdkOnly linking + signing -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Release' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+	  <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+	  <AndroidLinkMode>SdkOnly</AndroidLinkMode>
+	  <PublishTrimmed>true</PublishTrimmed>
+	  <AndroidKeyStore>True</AndroidKeyStore>
+	  <AndroidSigningKeyStore>$(MSBuildProjectDirectory)\CentersBarCode.keystore</AndroidSigningKeyStore>
+	  <AndroidSigningStorePass>12345678</AndroidSigningStorePass>
+	  <AndroidSigningKeyAlias>centersbarcode</AndroidSigningKeyAlias>
+	  <AndroidSigningKeyPass>12345678</AndroidSigningKeyPass>
 	</PropertyGroup>
 
 </Project>

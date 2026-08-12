@@ -2,7 +2,6 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/CentersBarCode/bin/Debug
-/CentersBarCode/obj
 /.vs
-/CentersBarCode/bin/Release/net8.0-android
+**/bin/
+**/obj/

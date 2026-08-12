@@ -15,7 +15,7 @@
             Margin="0,20,0,0"
             FontSize="32"
             HorizontalOptions="Center"
-            Text="Centers Bar Code"
+            Text="Scholar Bar Code"
             TextColor="Black" />
     </Grid>
 </ContentPage>

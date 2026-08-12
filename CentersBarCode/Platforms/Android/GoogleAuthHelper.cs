@@ -146,28 +146,19 @@ namespace CentersBarCode.Platforms.Android
                                 }
                                 catch (ApiException apiEx)
                                 {
-                                    // Handle network errors specifically
-                                    if (apiEx.StatusCode == 10)
-                                    {
-                                        Debug.WriteLine($"Network error during sign-in: {apiEx.Message}");
-                                        _authService.OnGoogleSignInError("Network error connecting to Google servers. Please ensure you have a stable internet connection and try again.");
-                                    }
-                                    else
-                                    {
-                                        // Handle other API exceptions
-                                        Debug.WriteLine($"Google API error: {apiEx.StatusCode} - {apiEx.Message}");
+                                    Debug.WriteLine($"Google API error: {apiEx.StatusCode} - {apiEx.Message}");
 
-                                        // Provide a more user-friendly message for common API errors
-                                        string errorMessage = apiEx.StatusCode switch
-                                        {
-                                            // Common status codes and their user-friendly messages
-                                            12500 => "Google Play Services is not available on this device.",
-                                            12501 => "User cancelled the sign-in.",
-                                            _ => $"Google sign-in error: {apiEx.Message}"
-                                        };
+                                    // Status 10 = DEVELOPER_ERROR (wrong SHA-1 / package / OAuth client), NOT a network failure
+                                    string errorMessage = apiEx.StatusCode switch
+                                    {
+                                        10 => "Google Sign-In configuration error (DEVELOPER_ERROR). Add this app's SHA-1 fingerprint and package name in Google Cloud Console, then try again.",
+                                        7 => "Network error connecting to Google. Please check your internet connection and try again.",
+                                        12500 => "Google Play Services is not available on this device.",
+                                        12501 => "User cancelled the sign-in.",
+                                        _ => $"Google sign-in error: {apiEx.Message}"
+                                    };
 
-                                        _authService.OnGoogleSignInError(errorMessage);
-                                    }
+                                    _authService.OnGoogleSignInError(errorMessage);
                                 }
                                 catch (System.Exception ex)
                                 {
